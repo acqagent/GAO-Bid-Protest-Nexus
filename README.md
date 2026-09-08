@@ -38,23 +38,47 @@ All decision text and links come from the U.S. Government Accountability
 Office (public domain) at gao.gov. The dashboard itself is a single
 self-contained HTML file — Map and Table work with no server at all.
 
-## Two zip distributions
+## Downloads
 
 - **Basic** (`gao-bid-protest-nexus-basic.zip`, ~0.3 MB) — just
   `visualization/map.html`. Unzip and open the file in any browser: you get
   the Map and Table tabs (all filters, the 3D map with all 5,986 decisions,
   the full decision table). No Python, no server, no models — fully offline.
-- **Full** (`gao-bid-protest-nexus-full.zip`, ~250 MB) — everything in this
-  folder: the dashboard plus the Dynamic Search backend (server scripts,
-  the 77,979-chunk vector index, and the decision metadata). Unzip and
-  follow the Quick start to also get plain-language Dynamic Search over the
-  full decision text (local models; the first run downloads ~1.4 GB of
-  models, then it is fully offline).
+  **Download from the [Releases page](../../releases/latest).**
+- **Full** (`gao-bid-protest-nexus-full.zip`, ~250 MB) — everything in the
+  basic zip plus the Dynamic Search backend (server scripts, the
+  77,979-chunk vector index, and the decision metadata). Unzip and follow
+  the Quick start to also get plain-language Dynamic Search over the full
+  decision text (local models; the first run downloads ~1.4 GB of models,
+  then it is fully offline).
+  **Download from [acqagent.ai](https://acqagent.ai).**
 
 Use the basic zip to browse and filter; use the full zip if you also want
 to ask questions of the corpus.
 
+### What is in this repository
+
+This repo holds the **source tree** (~4.3 MB): the dashboard, the server
+scripts, the decision metadata, and the index metadata. It does **not**
+contain the vector index — `vector/chunks.jsonl` (146 MB) and
+`vector/embeddings.npy` (229 MB) are each over GitHub's 100 MB per-file
+limit. Get them from the full zip at [acqagent.ai](https://acqagent.ai).
+
+Cloning the repo is enough to open the Map and Table tabs. **Dynamic
+Search additionally requires the two `vector/` files** — without them
+`scripts/serve.py` has no index to search.
+
 ## Quick start
+
+Map and Table only — no download needed beyond the repo:
+
+```bash
+git clone https://github.com/acqagent/GAO-Bid-Protest-Nexus.git
+# then open visualization/map.html in a browser
+```
+
+With Dynamic Search — copy `vector/chunks.jsonl` and
+`vector/embeddings.npy` from the full zip into `vector/` first, then:
 
 ```bash
 python -m venv .venv
@@ -131,16 +155,23 @@ unchanged with any model or API.
 
 ## Folder contents
 
+In the repo *and* the full zip:
+
 ```
 visualization/map.html   the dashboard (all Map/Table data embedded)
 scripts/serve.py         HTTP server: static files + /api/search
 scripts/searchlib.py     hybrid search core (dense + BM25 + RRF + re-rank)
-vector/chunks.jsonl      77,979 text chunks from the decision corpus
-vector/embeddings.npy    precomputed dense embeddings (bge-base-en-v1.5, 768-d)
 vector/meta.json         index metadata (model, dimensionality, chunk count)
 data/map.json            decision metadata (B-numbers, gao.gov/PDF links)
 data/mapped-decisions.json  per-decision ground + four filter values
 requirements.txt         Python dependencies for the Dynamic Search backend
+```
+
+Full zip only (too large for GitHub — from [acqagent.ai](https://acqagent.ai)):
+
+```
+vector/chunks.jsonl      146 MB — 77,979 text chunks from the decision corpus
+vector/embeddings.npy    229 MB — precomputed dense embeddings (bge-base-en-v1.5, 768-d)
 ```
 
 ## License

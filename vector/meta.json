@@ -1,0 +1,10 @@
+{
+  "model": "BAAI/bge-base-en-v1.5",
+  "dim": 768,
+  "n_chunks": 77979,
+  "created": "2026-09-03T17:43:55",
+  "chunk_target_words": 350,
+  "chunk_overlap_words": 40,
+  "digests": 5142,
+  "updated": "2026-09-06T00:23:08"
+}

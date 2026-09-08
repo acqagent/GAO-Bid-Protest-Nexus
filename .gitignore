@@ -1,0 +1,15 @@
+# Large distribution artifacts — not stored in git.
+# Full bundle (with the vector index) is downloadable from https://acqagent.ai
+# Basic bundle is attached to the GitHub Release.
+gao-bid-protest-nexus-basic.zip
+gao-bid-protest-nexus-full.zip
+
+# Vector index — 146 MB + 229 MB, both over GitHub's 100 MB file limit.
+# Ships in the full bundle; vector/meta.json is tracked.
+vector/chunks.jsonl
+vector/embeddings.npy
+
+# Python
+.venv/
+__pycache__/
+*.pyc
