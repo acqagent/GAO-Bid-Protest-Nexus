@@ -15,7 +15,7 @@ h1 small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-to
 #stats b{color:var(--ink)}
 .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 /* ---- analysis tabs (odds / builder) ---- */
-#groundview,#buildview{position:absolute;inset:0;overflow:auto;padding:20px 26px 40px 66px}
+#groundview{position:absolute;inset:0;overflow:auto;padding:20px 26px 40px 66px}
 .an{--above:#3987e5;--below:#e66767;--flat:#6f6e68;max-width:900px}
 .an h2{font-size:17px;margin:0 0 4px}
 .an .lede{color:var(--mut);font-size:12.5px;margin:0 0 18px;max-width:74ch}
@@ -181,7 +181,6 @@ h1 small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-to
       <button id="tab-table">Table</button>
       <button id="tab-chat">Dynamic Search</button>
       <button id="tab-ground">Ground detail</button>
-      <button id="tab-build">Build a protest</button>
     </div>
     <input id="search" placeholder="Search B-number, ground or filter…"/>
     <div id="filterbtns">
@@ -233,23 +232,10 @@ h1 small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-to
         <h2>Ground detail</h2>
         <p class="lede">How often this ground is sustained, against the corpus base rate, with the 95% confidence
         interval that its sample size supports. Computed over all 5,986 decisions — the side-panel filters do not
-        apply here.</p>
+        apply here. Most of the apparent spread between grounds is sampling noise: correct for testing all 33 and
+        only OCI, Corrective Action Challenge and Technical Evaluation are distinguishable from the base rate.</p>
         <div class="pick"><label>Ground <select id="gdsel"></select></label></div>
         <div id="gdbody"></div>
-      </div>
-    </div>
-    <div id="buildview" class="hidden">
-      <div class="an">
-        <h2>Build a protest</h2>
-        <p class="lede">Pick the acquisition in front of you. The rate is recomputed on just those decisions, with
-        the interval that sample supports — narrow slices produce wide intervals, and this page says so.</p>
-        <div class="pick">
-          <label>Ground <select id="bdg"></select></label>
-          <label>Authority <select id="bda"></select></label>
-          <label>Posture <select id="bdp"></select></label>
-          <button class="btn" id="bdreset">Reset</button>
-        </div>
-        <div id="bdbody"></div>
       </div>
     </div>
     <div id="pop">
@@ -1077,68 +1063,10 @@ function renderGround(g){
       ${s.hits.length>60?`<span class="chip" style="color:var(--mut)">+${s.hits.length-60} more</span>`:""}</div>`;
 }
 
-/* ---------- build a protest ---------- */
-function renderBuild(){
-  const g = bdg.value, a = bda.value, p = bdp.value;
-  const f = {}; if(g) f.ground=g; if(a) f.procurement_authority=a; if(p) f.protest_posture=p;
-  const s = statOf(f), v = vOf(s), thin = s.n < 30;
-  const parts = [g?GROUND_NAMES[g]:null, a?FACETS.procurement_authority.names[a]:null,
-                 p?FACETS.protest_posture.names[p]:null].filter(Boolean);
-  const cmp = [{label:"This slice", s}];
-  if(g) cmp.push({label:GROUND_NAMES[g]+", any authority", s:statOf({ground:g})});
-  cmp.push({label:"Whole corpus", s:{n:BASE_N,k:BASE_K,rate:BASE_R,lo:BASE_R,hi:BASE_R}});
-  // ranked by the bottom of the interval so a 25-decision fluke cannot lead
-  const ranked = ALL_GROUNDS.map(gg=>{
-    const ff = {ground:gg}; if(a) ff.procurement_authority=a; if(p) ff.protest_posture=p;
-    return {g:gg, label:GROUND_NAMES[gg], s:statOf(ff)};
-  }).filter(r=>r.s.n>=25).sort((x,y)=>y.s.lo-x.s.lo).slice(0,10);
-  const combos = ALL_GROUNDS.length * FACETS.procurement_authority.values.length
-                 * FACETS.protest_posture.values.length;
-  const line = parts.length===0 ? "no filters applied, so this is the corpus base rate itself."
-    : s.n===0 ? "no decisions match this combination."
-    : thin ? `<b style="color:var(--ink)">only ${s.n} decisions.</b> The interval spans ${pctv(s.hi-s.lo)}; treat this as a hint, not a rate.`
-    : v==="ns" ? `big enough to read, and it overlaps the ${pctv(BASE_R)} base rate.`
-    : s.n<100 ? `${v} the base rate, but on ${s.n} decisions the interval still spans ${pctv(s.hi-s.lo)} — suggestive, not settled.`
-    : `<b style="color:var(--ink)">${v} the base rate</b>, and the interval clears it.`;
-  document.getElementById("bdbody").innerHTML = `
-    <div class="head">
-      <div><div class="v hero" style="color:${thin?"var(--mut)":colOf(s)}">${s.n?pctv(s.rate):"—"}</div>
-        <div class="l">sustain rate for this slice</div></div>
-      <div><div class="v">${s.k} / ${s.n}</div><div class="l">sustained / decisions</div></div>
-      <div><div class="v">${s.n?pctv(s.lo)+" – "+pctv(s.hi):"—"}</div><div class="l">95% confidence interval</div></div>
-    </div>
-    <p class="note">${parts.length?esc(parts.join(" · ")):"All "+BASE_N.toLocaleString()+" decisions"} — ${line}</p>
-    <h3>How it compares</h3>
-    <div class="rows">${cmp.map(c=>`<div class="r"><span class="rl">${esc(c.label)}</span>`+
-      barHTML(c.s,false)+`<span class="rv">${pctv(c.s.rate)}</span><span class="rn">n=${c.s.n}</span></div>`).join("")}</div>
-    <h3>Best grounds for this acquisition <span class="sm">n ≥ 25, ranked by the bottom of the interval</span></h3>
-    <div class="rows">${ranked.map(r=>`<div class="r"><a class="rl" data-g="${r.g}">${esc(r.label)}</a>`+
-      barHTML(r.s,false)+`<span class="rv">${pctv(r.s.rate)}</span><span class="rn">n=${r.s.n}</span></div>`).join("")
-      || `<div class="note">No ground has 25 or more decisions in this slice.</div>`}</div>
-    <div class="warn"><b>Read this before trusting a narrow slice.</b> These three menus reach
-      ${ALL_GROUNDS.length} × ${FACETS.procurement_authority.values.length} × ${FACETS.protest_posture.values.length}
-      = ${combos.toLocaleString()} combinations. At 95% confidence roughly ${Math.round(combos*0.05).toLocaleString()}
-      of them clear the base rate by chance alone. Slicing until a number looks good is how that happens — decide
-      which slice matters before you look, and prefer the ones with a few hundred decisions behind them.</div>`;
-  document.querySelectorAll("#bdbody a.rl").forEach(a2=>
-    a2.onclick = ()=>{ gdsel.value = a2.dataset.g; setTab("ground"); });
-}
-
 /* ---------- wiring ---------- */
-const gdsel = document.getElementById("gdsel"),
-      bdg = document.getElementById("bdg"), bda = document.getElementById("bda"), bdp = document.getElementById("bdp");
+const gdsel = document.getElementById("gdsel");
 gdsel.innerHTML = GROUND_ORDER.map(g=>`<option value="${g}">${esc(GROUND_NAMES[g])}</option>`).join("");
 gdsel.onchange = ()=>renderGround(gdsel.value);
-function fillSel(sel, key, anyLabel){
-  sel.innerHTML = `<option value="">${anyLabel}</option>` +
-    FACETS[key].values.map(v=>`<option value="${v}">${esc(FACETS[key].names[v])}</option>`).join("");
-  sel.onchange = renderBuild;
-}
-fillSel(bdg, "ground", "Any ground");
-fillSel(bda, "procurement_authority", "Any authority");
-fillSel(bdp, "protest_posture", "Any posture");
-document.getElementById("bdreset").onclick = ()=>{ bdg.value=bda.value=bdp.value=""; renderBuild(); };
-
 /* ================= refresh + tabs ================= */
 let curTab = "map";
 let lastList = [];
@@ -1158,8 +1086,8 @@ function refresh(){
 }
 searchEl.addEventListener("input", refresh);
 
-const TABS = {map:"tab-map", table:"tab-table", chat:"tab-chat", ground:"tab-ground", build:"tab-build"};
-const VIEWS = {map:"mapview", table:"tableview", chat:"chatview", ground:"groundview", build:"buildview"};
+const TABS = {map:"tab-map", table:"tab-table", chat:"tab-chat", ground:"tab-ground"};
+const VIEWS = {map:"mapview", table:"tableview", chat:"chatview", ground:"groundview"};
 function setTab(which){
   curTab = which;
   Object.entries(TABS).forEach(([k,id])=>document.getElementById(id).classList.toggle("on", which===k));
@@ -1167,11 +1095,10 @@ function setTab(which){
   if(which!=="map") document.getElementById("pop").classList.remove("open");
   if(which==="table")  renderTable(lastList);
   if(which==="ground") renderGround(gdsel.value);
-  if(which==="build")  renderBuild();
 }
 Object.entries(TABS).forEach(([k,id])=>document.getElementById(id).onclick = ()=>setTab(k));
 
-/* deep links: #tab=ground&g=oci or #tab=build&g=oci&a=far_8_4_fss&p=pre_award */
+/* deep links: #tab=ground&g=oci */
 (function initHash(){
   const h = location.hash || "";
   const pick = (re, sel, valid) => {
@@ -1179,9 +1106,6 @@ Object.entries(TABS).forEach(([k,id])=>document.getElementById(id).onclick = ()=
     if(valid(m[1])) sel.value = m[1];
   };
   pick(/[#&]g=([a-z0-9_]+)/, gdsel, v=>ALL_GROUNDS.includes(v));
-  pick(/[#&]g=([a-z0-9_]+)/, bdg,   v=>ALL_GROUNDS.includes(v));
-  pick(/[#&]a=([a-z0-9_]+)/, bda,   v=>FACETS.procurement_authority.values.includes(v));
-  pick(/[#&]p=([a-z0-9_]+)/, bdp,   v=>FACETS.protest_posture.values.includes(v));
   const t = /[#&]tab=(\w+)/.exec(h);
   if(t && TABS[t[1]]) setTab(t[1]);
 })();

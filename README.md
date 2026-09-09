@@ -5,7 +5,7 @@ A self-hosted, interactive dashboard over **5,986 GAO bid protest decisions**
  Python server adds the Dynamic Search view (grounded search over the full
  decision text).
 
-## The five tabs
+## The four tabs
 
 - **Map** — an interactive **3D** constellation: the 33 protest grounds sit on
   a sphere, each surrounded by its own cluster of decisions, with the four
@@ -30,14 +30,11 @@ A self-hosted, interactive dashboard over **5,986 GAO bid protest decisions**
   corpus base rate, with the 95% confidence interval its sample size supports,
   a disposition breakdown, splits by authority and posture, and links to every
   sustained decision on that ground.
-- **Build a protest** — pick ground, procurement authority and posture, and the
-  sustain rate is recomputed on just those decisions, with the interval that
-  slice supports and a ranking of the grounds available within it.
 
-The last two tabs read the whole corpus and ignore the side-panel filters:
-they answer what the odds are on a ground, which is a property of the data
-rather than of the current selection. Both carry their intervals everywhere,
-because most of the apparent spread between grounds is sampling noise —
+Ground detail reads the whole corpus and ignores the side-panel filters: it
+answers what the odds are on a ground, which is a property of the data rather
+than of the current selection. It carries its intervals everywhere, because
+most of the apparent spread between grounds is sampling noise —
 of the 33 grounds only three (OCI, Corrective Action Challenge and Technical
 Evaluation) are distinguishable from the base rate once you correct for
 testing 33 of them.
