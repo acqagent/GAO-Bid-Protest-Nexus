@@ -194,7 +194,7 @@ h1 small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-to
         Five filters — <b>Grounds</b> plus disposition, overall outcome, procurement authority
         and protest posture — drive all three views. <b>Map</b>: click any node to see its
         connections and the decisions behind it. <b>Table</b>: B-number, short description and
-        PDF links. <b>Dynamic Search</b>: grounded search over the decision corpus.
+        PDF links. <b>Dynamic Search</b>: full-text search over the decision corpus.
       </div>
     </div>
   </aside>
@@ -219,11 +219,11 @@ h1 small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-to
     </div>
     <div id="chatview" class="hidden">
       <div id="chat">
-        <div id="chathead"><b>Dynamic Search</b> — ask about GAO bid protest law; answers are grounded in the <b>5,986</b> downloaded decisions.</div>
+        <div id="chathead"><b>Dynamic Search</b> — full-text search across the <b>5,986</b> downloaded decisions. Returns the passages that match your wording, ranked, each linked to its source decision.</div>
         <div id="chatmsgs"></div>
         <div id="chatinput">
-          <input id="chatq" placeholder="e.g. what is a prejudicial solicitation defect?" enterkeyhint="send"/>
-          <button id="chatsend">Ask</button>
+          <input id="chatq" placeholder="Search the decision text — e.g. prejudicial solicitation defect" enterkeyhint="search"/>
+          <button id="chatsend">Search</button>
         </div>
       </div>
     </div>
@@ -1128,7 +1128,7 @@ const chatSend = document.getElementById("chatsend");
 function appendMsg(role, html){
   const d = document.createElement("div");
   d.className = "msg " + role;
-  d.innerHTML = `<div class="mwho">${role==="user"?"You":"Nexus"}</div><div class="mtext">${html}</div>`;
+  d.innerHTML = `<div class="mwho">${role==="user"?"Query":"Results"}</div><div class="mtext">${html}</div>`;
   chatmsgs.appendChild(d);
   chatmsgs.scrollTop = chatmsgs.scrollHeight;
   return d;
@@ -1171,7 +1171,7 @@ function wireRes(bot){
 // from our own URL so /api/search hits the right mount in both cases.
 const API_BASE = location.pathname.replace(/\/visualization\/[^/]*$/, "");
 
-async function ask(){
+async function runSearch(){
   const q = chatq.value.trim(); if(!q) return;
   chatq.value = "";
   chatSend.disabled = true;
@@ -1195,8 +1195,8 @@ async function ask(){
   chatSend.disabled = false;
   chatmsgs.scrollTop = chatmsgs.scrollHeight;
 }
-chatSend.onclick = ask;
-chatq.addEventListener("keydown", e=>{ if(e.key==="Enter") ask(); });
+chatSend.onclick = runSearch;
+chatq.addEventListener("keydown", e=>{ if(e.key==="Enter") runSearch(); });
 
 refresh();
 </script>
