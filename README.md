@@ -22,9 +22,9 @@ A self-hosted, interactive dashboard over **5,986 GAO bid protest decisions**
   **all / none** quick toggles in its header.
 - **Table** — every matching decision: B-number, short description, all five
   filter values, and links to the gao.gov decision page and PDF.
-- **Dynamic Search** — ask questions in plain language; answers are grounded in
-  the decision corpus via hybrid retrieval (dense vectors + BM25, RRF fusion,
-  cross-encoder re-ranking), with links back to the source PDFs.
+- **Dynamic Search** — hybrid retrieval over the full decision text (dense
+  vectors + BM25, RRF fusion, cross-encoder re-ranking). Returns the matching
+  passages, each linked back to its source decision and PDF.
 
 **All decisions are in the 3D map.** Unlike a flat list, the map renders every
 one of the 5,986 decision dots at once, so nothing is hidden behind a cap —
@@ -48,15 +48,15 @@ self-contained HTML file — Map and Table work with no server at all.
 - **Full** (`gao-bid-protest-nexus-full.zip`, ~250 MB) — everything in the
   basic zip plus the Dynamic Search backend (server scripts, the
   77,979-chunk vector index, and the decision metadata). Unzip and follow
-  the Quick start to also get plain-language Dynamic Search over the full
-  decision text (local models; the first run downloads ~1.4 GB of models,
+  the Quick start to also get Dynamic Search over the full decision text
+  (local models; the first run downloads ~1.4 GB of models,
   then it is fully offline).
   **Download:
   [acqagent.ai/downloads/gao-bid-protest-nexus-full.zip](https://acqagent.ai/downloads/gao-bid-protest-nexus-full.zip)**
   (resumable, so an interrupted download can pick up where it stopped).
 
 Use the basic zip to browse and filter; use the full zip if you also want
-to ask questions of the corpus.
+to search the full text of the decisions.
 
 ### What is in this repository
 
