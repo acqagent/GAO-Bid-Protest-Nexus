@@ -51,7 +51,9 @@ self-contained HTML file — Map and Table work with no server at all.
   the Quick start to also get plain-language Dynamic Search over the full
   decision text (local models; the first run downloads ~1.4 GB of models,
   then it is fully offline).
-  **Download from [acqagent.ai](https://acqagent.ai).**
+  **Download:
+  [acqagent.ai/downloads/gao-bid-protest-nexus-full.zip](https://acqagent.ai/downloads/gao-bid-protest-nexus-full.zip)**
+  (resumable, so an interrupted download can pick up where it stopped).
 
 Use the basic zip to browse and filter; use the full zip if you also want
 to ask questions of the corpus.
@@ -62,7 +64,8 @@ This repo holds the **source tree** (~4.3 MB): the dashboard, the server
 scripts, the decision metadata, and the index metadata. It does **not**
 contain the vector index — `vector/chunks.jsonl` (146 MB) and
 `vector/embeddings.npy` (229 MB) are each over GitHub's 100 MB per-file
-limit. Get them from the full zip at [acqagent.ai](https://acqagent.ai).
+limit. Get them from the
+[full zip](https://acqagent.ai/downloads/gao-bid-protest-nexus-full.zip).
 
 Cloning the repo is enough to open the Map and Table tabs. **Dynamic
 Search additionally requires the two `vector/` files** — without them
@@ -167,7 +170,8 @@ data/mapped-decisions.json  per-decision ground + four filter values
 requirements.txt         Python dependencies for the Dynamic Search backend
 ```
 
-Full zip only (too large for GitHub — from [acqagent.ai](https://acqagent.ai)):
+Full zip only (too large for GitHub — from
+[acqagent.ai](https://acqagent.ai/downloads/gao-bid-protest-nexus-full.zip)):
 
 ```
 vector/chunks.jsonl      146 MB — 77,979 text chunks from the decision corpus
