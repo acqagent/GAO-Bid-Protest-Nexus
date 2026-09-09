@@ -13,8 +13,46 @@ h1{margin:0 0 4px;font-size:16px}
 h1 small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-top:2px}
 #stats{color:var(--mut);font-size:11px;margin-bottom:12px}
 #stats b{color:var(--ink)}
-.tabs{display:flex;gap:6px;margin-bottom:10px}
-.tabs button{flex:1;background:#0b0e13;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:7px 0;cursor:pointer;font-size:13px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+/* ---- analysis tabs (odds / builder) ---- */
+#groundview,#buildview{position:absolute;inset:0;overflow:auto;padding:20px 26px 40px 66px}
+.an{--above:#3987e5;--below:#e66767;--flat:#6f6e68;max-width:900px}
+.an h2{font-size:17px;margin:0 0 4px}
+.an .lede{color:var(--mut);font-size:12.5px;margin:0 0 18px;max-width:74ch}
+.an .pick{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
+.an label{font-size:12px;color:var(--mut);display:flex;gap:7px;align-items:center}
+.an select{background:#0b0e13;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:6px 9px;font-size:12.5px}
+.an .btn{background:#0b0e13;border:1px solid var(--line);color:var(--mut);border-radius:6px;padding:6px 11px;
+  font-size:12.5px;cursor:pointer}
+.an .btn:hover{color:var(--ink);border-color:#3a4b63}
+.an .head{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:14px;margin-bottom:6px}
+.an .head .v{font-size:26px;font-weight:650;letter-spacing:-.02em}
+.an .head .v.hero{font-size:48px;line-height:1.05}
+.an .head .l{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;margin-top:3px}
+.an h3{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:26px 0 9px;font-weight:600}
+.an h3 .sm{text-transform:none;letter-spacing:0;font-weight:400}
+.an .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:26px}
+.an .rows{display:flex;flex-direction:column;gap:5px}
+.an .r{display:grid;grid-template-columns:minmax(120px,1.1fr) 3fr 52px 54px;gap:10px;align-items:center;font-size:12.5px}
+.an .r.thin{opacity:.55}
+.an .rl{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.an a.rl{color:#7ea6ff;text-decoration:none;cursor:pointer}
+.an a.rl:hover{text-decoration:underline}
+.an .tr{position:relative;height:10px;background:#0b0e13;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.an .ci{position:absolute;top:0;bottom:0;background:var(--flat);opacity:.45}
+.an .fl{position:absolute;top:0;bottom:0;left:0;border-radius:0 3px 3px 0}
+.an .rv{text-align:right;font-weight:600}
+.an .rn{text-align:right;font-size:11px;color:var(--mut)}
+.an .mix{display:flex;height:14px;border-radius:4px;overflow:hidden;gap:2px;margin-top:16px}
+.an .mixkey{display:flex;gap:15px;font-size:12px;color:var(--mut);margin-top:6px}
+.an .chips{display:flex;flex-wrap:wrap;gap:5px}
+.an .chip{font-size:11px;padding:3px 8px;border-radius:6px;background:#0b0e13;border:1px solid var(--line);
+  color:#7ea6ff;text-decoration:none}
+.an .warn{background:#161b23;border:1px solid var(--line);border-left:3px solid var(--below);border-radius:0 8px 8px 0;
+  padding:12px 15px;font-size:12.5px;color:var(--mut);margin-top:22px}
+.an .warn b{color:var(--ink)}
+.an .note{font-size:12px;color:var(--mut);margin-top:14px}
+.tabs button{flex:1 1 46%;background:#0b0e13;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:7px 6px;cursor:pointer;font-size:12.5px;white-space:nowrap}
 .tabs button.on{background:#233042;color:var(--ink);border-color:#3a4b63}
 #search{background:#0b0e13;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:7px 10px;width:100%;margin-bottom:8px}
 #filterbtns{display:flex;gap:6px;margin-bottom:4px}
@@ -142,6 +180,8 @@ h1 small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-to
       <button id="tab-map" class="on">Map</button>
       <button id="tab-table">Table</button>
       <button id="tab-chat">Dynamic Search</button>
+      <button id="tab-ground">Ground detail</button>
+      <button id="tab-build">Build a protest</button>
     </div>
     <input id="search" placeholder="Search B-number, ground or filter…"/>
     <div id="filterbtns">
@@ -186,6 +226,30 @@ h1 small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-to
           <input id="chatq" placeholder="e.g. what is a prejudicial solicitation defect?" enterkeyhint="send"/>
           <button id="chatsend">Ask</button>
         </div>
+      </div>
+    </div>
+    <div id="groundview" class="hidden">
+      <div class="an">
+        <h2>Ground detail</h2>
+        <p class="lede">How often this ground is sustained, against the corpus base rate, with the 95% confidence
+        interval that its sample size supports. Computed over all 5,986 decisions — the side-panel filters do not
+        apply here.</p>
+        <div class="pick"><label>Ground <select id="gdsel"></select></label></div>
+        <div id="gdbody"></div>
+      </div>
+    </div>
+    <div id="buildview" class="hidden">
+      <div class="an">
+        <h2>Build a protest</h2>
+        <p class="lede">Pick the acquisition in front of you. The rate is recomputed on just those decisions, with
+        the interval that sample supports — narrow slices produce wide intervals, and this page says so.</p>
+        <div class="pick">
+          <label>Ground <select id="bdg"></select></label>
+          <label>Authority <select id="bda"></select></label>
+          <label>Posture <select id="bdp"></select></label>
+          <button class="btn" id="bdreset">Reset</button>
+        </div>
+        <div id="bdbody"></div>
       </div>
     </div>
     <div id="pop">
@@ -297,6 +361,11 @@ function bnumSort(a, b){
  const GROUND_ORDER = ALL_GROUNDS.slice().sort((a,b)=>GROUND_TOTALS.get(b)-GROUND_TOTALS.get(a));
  const groundColor = g => g==="other" ? "#5a6575"
    : `hsl(${Math.round(GROUND_ORDER.indexOf(g)*360/ALL_GROUNDS.length)}, 62%, 56%)`;
+ // colour each ground's sidebar swatch to match its dots on the map
+ ALL_GROUNDS.forEach(g=>{
+   const lab = rows["ground|"+g], dot = lab && lab.querySelector(".dot");
+   if(dot) dot.style.background = groundColor(g);
+ });
  const mappedById = new Map(MAPPED.map(m=>[m.id.toLowerCase(), m]));
  const VAL_KEYS = FACET_KEYS.filter(k=>k!=="ground");
  const FACET_DOTS = { disposition:"#69c28f", overall_outcome:"#e0a34d",
@@ -316,40 +385,59 @@ function bnumSort(a, b){
  function frand(s){
    let h = 2166136261 >>> 0;
    for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
-   return ((h ^ (h>>>13)) >>> 0) / 4294967295;
+   h ^= h>>>16; h = Math.imul(h, 2246822507);
+   h ^= h>>>13; h = Math.imul(h, 3266489909);
+   h ^= h>>>16;
+   return (h>>>0) / 4294967296;
  }
 
- // ---- static world layout (units) ----
- // Layer 1: grounds on a vertical column (x=-640), sorted by size top->down.
+ // ---- static world layout (units) — constellation ----
+ // Grounds sit on a Fibonacci sphere, so no viewing angle is privileged and
+ // the shape fills the frame however it is rotated. Screen-up is +z.
+ const R_SHELL = 1180;
  const G_P = new Map();
- GROUND_ORDER.forEach((g,i)=>G_P.set(g, [-640, 0, (ALL_GROUNDS.length-1)*95/2 - i*95]));
- // Layer 2: sub-filter values on a vertical column (x=0), 4 stacked groups.
+ {
+   const n = GROUND_ORDER.length, ga = Math.PI*(3-Math.sqrt(5));
+   GROUND_ORDER.forEach((g,i)=>{
+     const z = 1 - (i+0.5)*2/n;
+     const r = Math.sqrt(Math.max(0, 1-z*z));
+     const th = ga*i;
+     G_P.set(g, [R_SHELL*r*Math.cos(th), R_SHELL*r*Math.sin(th), R_SHELL*z]);
+   });
+ }
+ // The four sub-filter facets form a small core at the centre: one ring each,
+ // stacked, so every filament in the scene converges on the middle.
  const V_P = new Map();
  {
-   const groups = VAL_KEYS.map(k=>[k, FACETS[k].values]);
-   const total = groups.reduce((s,g)=>s+(g[1].length-1), 0)*64 + (groups.length-1)*110;
-   let z = -total/2;
-   groups.forEach(([k, vals])=>{
-     vals.forEach(v=>{ V_P.set(valueKey(k,v), [0,0,z]); z += 64; });
-     z += 110;
+   VAL_KEYS.forEach((k, ki)=>{
+     const vals = FACETS[k].values;
+     const zc = ((VAL_KEYS.length-1)/2 - ki)*150;
+     vals.forEach((v, vi)=>{
+       const a = (vi+0.5)*2*Math.PI/vals.length + ki*0.45;
+       V_P.set(valueKey(k,v), [200*Math.cos(a), 200*Math.sin(a), zc]);
+     });
    });
  }
- // Layer 3: ALL decisions on a ring "tube" around the x-axis, one angular
- // sector per ground (sector centre = that ground's position along the ring).
+ // Every decision sits in a ball around its own ground; ball radius grows with
+ // the size of that ground, so volume is legible before you read a label.
  const DEC_P = new Float32Array(MAPPED.length*3);
  {
+   const cnt = new Map();
+   MAPPED.forEach(m=>cnt.set(m.ground, (cnt.get(m.ground)||0)+1));
+   const maxC = Math.max(...cnt.values());
    MAPPED.forEach((m,idx)=>{
      const id = m.id.toLowerCase();
-     const gi = GROUND_ORDER.indexOf(m.ground);
-     const sector = 2*Math.PI/ALL_GROUNDS.length;
-     const phi = (gi+0.5)*sector + (frand(id+"p")-0.5)*sector*0.8;
-     const rad = 430 + frand(id+"r")*260;
-     DEC_P[idx*3]   = 680 + (frand(id+"x")-0.5)*340;
-     DEC_P[idx*3+1] = rad*Math.sin(phi);
-     DEC_P[idx*3+2] = rad*Math.cos(phi)*0.92;
+     const gp = G_P.get(m.ground) || [0,0,0];
+     const rad = 78 + 210*Math.sqrt((cnt.get(m.ground)||1)/maxC);
+     const u  = frand(id+"u")*2-1;
+     const ph = frand(id+"p")*2*Math.PI;
+     const rr = rad*Math.cbrt(0.12 + 0.88*frand(id+"r"));
+     const sr = Math.sqrt(Math.max(0, 1-u*u));
+     DEC_P[idx*3]   = gp[0] + rr*sr*Math.cos(ph);
+     DEC_P[idx*3+1] = gp[1] + rr*sr*Math.sin(ph);
+     DEC_P[idx*3+2] = gp[2] + rr*u;
    });
  }
-
  // ---- structural node list (grounds then values) ----
  const NODES = [];
  const giIdx = new Map();
@@ -374,7 +462,7 @@ function bnumSort(a, b){
 
  // ---- camera + projection ----
  const FOV = 46*Math.PI/180;
- const CAM0 = { yaw:2.68, pitch:0.18, dist:4200, tx:0, ty:0, tz:0 };
+ const CAM0 = { yaw:2.30, pitch:0.20, dist:3750, tx:0, ty:0, tz:0 };
  let cam = {...CAM0};
  const NPROJ = new Float32Array(NODES.length*4);
  const DPROJ = new Float32Array(MAPPED.length*4);
@@ -451,32 +539,72 @@ function bnumSort(a, b){
    setNeeds();
  }
 
+ /* ---------- prototype: glow sprites, depth ordering ---------- */
+ const SPR = new Map();
+ function colA(col, a){
+   if(col[0] === "#"){
+     const nn = parseInt(col.slice(1), 16);
+     return "rgba(" + ((nn>>16)&255) + "," + ((nn>>8)&255) + "," + (nn&255) + "," + a + ")";
+   }
+   return col.replace(/^hsl\((.*)\)$/, function(m, p){ return "hsla(" + p + "," + a + ")"; });
+ }
+ function sprite(col){
+   let c = SPR.get(col);
+   if(c) return c;
+   const R = 34;
+   c = document.createElement("canvas");
+   c.width = c.height = R*2;
+   const g = c.getContext("2d");
+   const grd = g.createRadialGradient(R,R,0, R,R,R);
+   grd.addColorStop(0,    colA(col, 1));
+   grd.addColorStop(0.30, colA(col, 0.60));
+   grd.addColorStop(0.52, colA(col, 0.34));
+   grd.addColorStop(1,    colA(col, 0));
+   g.fillStyle = grd;
+   g.beginPath(); g.arc(R,R,R,0,6.2832); g.fill();
+   SPR.set(col, c);
+   return c;
+ }
+ const ORD = new Int32Array(MAPPED.length);
+
  // ---- draw ----
  function draw(){
    if(!ctx) return;
    const W = cv.clientWidth, H = cv.clientHeight;
    if(W<10 || H<10) return;
    projectAll();
-   ctx.clearRect(0,0,W,H);
+
+   // depth backdrop, so the cloud sits in a volume instead of on a flat field
+   const bg = ctx.createRadialGradient(W*0.58, H*0.48, 0, W*0.58, H*0.48, Math.max(W,H)*0.82);
+   bg.addColorStop(0,    "#18202c");
+   bg.addColorStop(0.55, "#101620");
+   bg.addColorStop(1,    "#080b10");
+   ctx.fillStyle = bg;
+   ctx.fillRect(0,0,W,H);
+
+   let matchCount = 0;
+   for(let i=0;i<MAPPED.length;i++) if(decOn[i]) matchCount++;
 
    // ground -> value edges (weight-scaled)
    PAIRS.forEach(p=>{
      if(p.wn<=0) return;
      const ai = giIdx.get(p.g), bi = viIdx.get(p.vk);
      if(NPROJ[ai*4+2]<2 || NPROJ[bi*4+2]<2) return;
-     ctx.strokeStyle = `rgba(96,112,135,${(0.05+0.4*p.wn).toFixed(3)})`;
-     ctx.lineWidth = 0.6 + 2.4*p.wn;
+     ctx.strokeStyle = `rgba(122,152,196,${(0.04+0.32*p.wn).toFixed(3)})`;
+     ctx.lineWidth = 0.6 + 2.2*p.wn;
      ctx.beginPath();
      ctx.moveTo(NPROJ[ai*4], NPROJ[ai*4+1]);
      ctx.lineTo(NPROJ[bi*4], NPROJ[bi*4+1]);
      ctx.stroke();
    });
 
-   // value -> decision edges (matching decisions only, one batch)
+   // value -> decision filaments. All ~24k of them bury the dots in haze, so
+   // draw an evenly spaced sample: the structure still reads, the dots survive.
+   const stride = Math.max(1, Math.ceil(matchCount/420));
    ctx.lineWidth = 1;
-   ctx.strokeStyle = "rgba(150,165,185,0.055)";
+   ctx.strokeStyle = "rgba(138,172,224,0.075)";
    ctx.beginPath();
-   for(let i=0;i<MAPPED.length;i++){
+   for(let i=0;i<MAPPED.length;i+=stride){
      if(!decOn[i] || DPROJ[i*4+2]<2) continue;
      const dx = DPROJ[i*4], dy = DPROJ[i*4+1];
      for(let t=0;t<4;t++){
@@ -514,51 +642,98 @@ function bnumSort(a, b){
      }
    }
 
-   // decision dots — ALL of them (dim when not matching), batched per color
-   const dotsBy = new Map();
+   // decision dots — all of them, far-to-near with distance fog and glow
+   let n = 0;
    for(let i=0;i<MAPPED.length;i++){
      if(DPROJ[i*4+2]<2) continue;
-     const s = DPROJ[i*4+3];
-     const px = (decOn[i] ? 15 : 10)*s;
-     const x = DPROJ[i*4]-px/2, y = DPROJ[i*4+1]-px/2;
-     if(x>W+8 || y>H+8 || x<-8 || y<-8) continue;
-     const key = MAPPED[i].ground + (decOn[i] ? "1" : "0");
-     let arr = dotsBy.get(key);
-     if(!arr) dotsBy.set(key, arr = []);
-     arr.push(x, y, px);
+     const x = DPROJ[i*4], y = DPROJ[i*4+1];
+     if(x<-60 || y<-60 || x>W+60 || y>H+60) continue;
+     ORD[n++] = i;
    }
-   dotsBy.forEach((arr, key)=>{
-     ctx.globalAlpha = key.endsWith("1") ? 0.88 : 0.05;
-     ctx.fillStyle = groundColor(key.slice(0, -1));
-     ctx.beginPath();
-     for(let j=0;j<arr.length;j+=3) ctx.rect(arr[j], arr[j+1], arr[j+2], arr[j+2]);
-     ctx.fill();
-   });
+   const view = ORD.subarray(0, n);
+   view.sort((a,b)=> DPROJ[b*4+2] - DPROJ[a*4+2]);
+   const dFar = n ? DPROJ[view[0]*4+2] : 1, dNear = n ? DPROJ[view[n-1]*4+2] : 1;
+   const span = Math.max(1, dFar - dNear);
+   ctx.globalCompositeOperation = "lighter";
+   for(let j=0;j<n;j++){
+     const i = view[j];
+     const on = decOn[i];
+     const t = 1 - (DPROJ[i*4+2]-dNear)/span;
+     const s = DPROJ[i*4+3];
+     const sz = (on ? 27 : 17)*s*(0.55+0.45*t);
+     if(sz < 0.7) continue;
+     ctx.globalAlpha = on ? (0.15+0.38*t) : (0.04+0.045*t);
+     const sp = sprite(groundColor(MAPPED[i].ground));
+     ctx.drawImage(sp, DPROJ[i*4]-sz/2, DPROJ[i*4+1]-sz/2, sz, sz);
+   }
+   ctx.globalCompositeOperation = "source-over";
    ctx.globalAlpha = 1;
 
-   // structural nodes + labels
-   for(let i=NODES.length-1;i>=0;i--){
-     if(NPROJ[i*4+2]<2) continue;
-     const n = NODES[i];
+   // structural nodes, back to front
+   const nord = [];
+   for(let i=0;i<NODES.length;i++) if(NPROJ[i*4+2]>=2) nord.push(i);
+   nord.sort((a,b)=>NPROJ[b*4+2]-NPROJ[a*4+2]);
+   for(const i of nord){
+     const nd = NODES[i];
      const s = NPROJ[i*4+3], px = NPROJ[i*4], py = NPROJ[i*4+1];
-     const r = Math.max(3, n.w*s);
-     ctx.globalAlpha = Math.min(1, 1600/NPROJ[i*4+2] + 0.25);
+     const r = Math.max(3, nd.w*s);
+     const a = Math.min(1, 1600/NPROJ[i*4+2] + 0.25);
+     ctx.globalCompositeOperation = "lighter";
+     ctx.globalAlpha = a*0.45;
+     ctx.drawImage(sprite(nd.col), px-r*2.6, py-r*2.6, r*5.2, r*5.2);
+     ctx.globalCompositeOperation = "source-over";
+     ctx.globalAlpha = a;
      ctx.beginPath(); ctx.arc(px,py,r,0,6.2832);
-     ctx.fillStyle = n.col; ctx.fill();
-     ctx.lineWidth = 2; ctx.strokeStyle = "#0e1116"; ctx.stroke();
+     ctx.fillStyle = nd.col; ctx.fill();
+     ctx.lineWidth = 2; ctx.strokeStyle = "rgba(9,12,17,0.9)"; ctx.stroke();
      if(i===hoverNode){
-       ctx.beginPath(); ctx.arc(px,py,r+4,0,6.2832);
-       ctx.strokeStyle = "rgba(255,255,255,.65)"; ctx.lineWidth = 1.2; ctx.stroke();
+       ctx.beginPath(); ctx.arc(px,py,r+5,0,6.2832);
+       ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = 1.4; ctx.stroke();
      }
-     const fs = Math.max(9, Math.min(17, 36*s));
+   }
+   ctx.globalAlpha = 1;
+
+   // labels: biggest and nearest win, anything that would collide is dropped
+   const cand = nord.slice().sort((a,b)=>{
+     if(a===hoverNode) return -1;
+     if(b===hoverNode) return 1;
+     return NODES[b].w*NPROJ[b*4+3] - NODES[a].w*NPROJ[a*4+3];
+   });
+   const boxes = [];
+   ctx.textBaseline = "middle";
+   for(const i of cand){
+     const nd = NODES[i];
+     const s = NPROJ[i*4+3], px = NPROJ[i*4], py = NPROJ[i*4+1];
+     const r = Math.max(3, nd.w*s);
+     const fs = nd.kind==="ground" ? Math.max(10, Math.min(18, 40*s))
+                                   : Math.max(8.5, Math.min(12.5, 26*s));
      ctx.font = `700 ${fs.toFixed(1)}px system-ui, sans-serif`;
-     ctx.textAlign = n.kind==="ground" ? "right" : "left";
-     ctx.textBaseline = "middle";
-     ctx.fillStyle = `rgba(214,224,238,${Math.min(1, 1500/NPROJ[i*4+2] + 0.2).toFixed(2)})`;
-     ctx.fillText(n.label, n.kind==="ground" ? px-r-7 : px+r+7, py);
+     const tw = ctx.measureText(nd.label).width;
+     const lx = (px > W*0.5) ? px+r+8 : px-r-8-tw;
+     const box = [lx-3, py-fs*0.75, tw+6, fs*1.5];
+     let clash = false;
+     for(const b of boxes){
+       if(box[0] < b[0]+b[2] && box[0]+box[2] > b[0] &&
+          box[1] < b[1]+b[3] && box[1]+box[3] > b[1]){ clash = true; break; }
+     }
+     if(clash && i!==hoverNode) continue;
+     boxes.push(box);
+     ctx.textAlign = "left";
+     const a = Math.min(1, 1500/NPROJ[i*4+2] + 0.2);
+     if(nd.kind === "value"){
+       ctx.globalAlpha = a*0.42;
+       ctx.fillStyle = "#080b10";
+       ctx.fillRect(box[0]-3, box[1], box[2]+6, box[3]);
+       ctx.globalAlpha = 1;
+     }
+     ctx.shadowColor = "rgba(5,8,12,0.95)"; ctx.shadowBlur = 6;
+     ctx.fillStyle = `rgba(228,236,247,${a.toFixed(2)})`;
+     ctx.fillText(nd.label, lx, py);
+     ctx.shadowBlur = 0;
    }
    ctx.globalAlpha = 1;
  }
+
 
  // ---- canvas sizing + render loop ----
  function sizeCanvas(){
@@ -573,7 +748,29 @@ function bnumSort(a, b){
    if(window.ResizeObserver) new ResizeObserver(sizeCanvas).observe(cv);
    window.addEventListener("resize", sizeCanvas);
    sizeCanvas();
-   (function tick(){ if(needsDraw){ needsDraw=false; draw(); } requestAnimationFrame(tick); })();
+   let lastInput = 0, T0 = performance.now(), introDone = false;
+   const easeOut = u => 1 - Math.pow(1-u, 3);
+   ["pointerdown","pointermove","wheel","dblclick"].forEach(ev =>
+     cv.addEventListener(ev, ()=>{
+       lastInput = performance.now();
+       if(!introDone){ introDone = true; cam = {...CAM0}; }
+     }, {passive:true}));
+   (function tick(){
+     const now = performance.now();
+     if(!introDone){
+       const k = easeOut(Math.min(1, (now-T0)/1700));
+       cam.yaw   = CAM0.yaw   - 0.80*(1-k);
+       cam.pitch = CAM0.pitch + 0.38*(1-k);
+       cam.dist  = CAM0.dist  * (1 + 1.00*(1-k));
+       needsDraw = true;
+       if(k >= 1) introDone = true;
+     } else if(!drag && now - lastInput > 2500){
+       cam.yaw += 0.0012;                      // slow idle orbit
+       needsDraw = true;
+     }
+     if(needsDraw){ needsDraw=false; draw(); }
+     requestAnimationFrame(tick);
+   })();
  }
 
  // ---- picking ----
@@ -660,7 +857,7 @@ function bnumSort(a, b){
 
  document.getElementById("legend").innerHTML =
    `<b>3D neural map</b> — every one of the ${MAPPED.length} decisions is a dot,
-   grouped in a ring sector per ground
+   clustered around its own ground
    (<span style="opacity:.5">dim</span> = not matching the filters).<br/>
     <span class="lg" style="background:#69c28f"></span>Disposition ·
     <span class="lg" style="background:#e0a34d"></span>Outcome ·
@@ -801,6 +998,147 @@ function renderTable(list){
     : (list.length>ROW_CAP ? `Showing first ${ROW_CAP} of ${list.length} — narrow the filters for the full list.` : "");
 }
 
+/* ================= analysis tabs: ground detail + protest builder =================
+   Both read MAPPED directly and ignore the side-panel filters: they answer
+   "what are the odds on this ground", which is a property of the corpus, not
+   of whatever the user happens to have ticked. */
+const BASE_N = MAPPED.length;
+const BASE_K = MAPPED.reduce((a,m)=>a+(m.disposition==="sustained"?1:0),0);
+const BASE_R = BASE_K/BASE_N;
+const pctv = v => (v*100).toFixed(1)+"%";
+
+function wilsonCI(k,n,z=1.96){
+  if(!n) return [0,0];
+  const p=k/n, den=1+z*z/n, c=(p+z*z/(2*n))/den,
+        h=z*Math.sqrt(p*(1-p)/n + z*z/(4*n*n))/den;
+  return [Math.max(0,c-h), Math.min(1,c+h)];
+}
+function statOf(f){
+  let n=0,k=0; const hits=[];
+  for(const m of MAPPED){
+    if(f.ground && m.ground!==f.ground) continue;
+    if(f.procurement_authority && m.procurement_authority!==f.procurement_authority) continue;
+    if(f.protest_posture && m.protest_posture!==f.protest_posture) continue;
+    n++;
+    if(m.disposition==="sustained"){ k++; hits.push(m); }
+  }
+  const [lo,hi] = wilsonCI(k,n);
+  return {n,k,rate:n?k/n:0,lo,hi,hits};
+}
+const vOf   = s => s.n===0 ? "none" : s.lo>BASE_R ? "above" : s.hi<BASE_R ? "below" : "ns";
+const colOf = s => ({above:"var(--above)",below:"var(--below)"})[vOf(s)] || "var(--flat)";
+const AXMAX = 0.36;
+function barHTML(s, muted){
+  const w = Math.min(100, s.rate/AXMAX*100),
+        lo = Math.min(100, s.lo/AXMAX*100), hi = Math.min(100, s.hi/AXMAX*100);
+  return `<span class="tr"><span class="ci" style="left:${lo}%;width:${Math.max(0,hi-lo)}%"></span>`+
+         `<span class="fl" style="width:${w}%;background:${muted?"var(--flat)":colOf(s)}"></span></span>`;
+}
+function facetRows(key, ground){
+  return FACETS[key].values.map(v=>{
+    const f = {}; f[key] = v; if(ground) f.ground = ground;
+    return {label:FACETS[key].names[v], s:statOf(f)};
+  }).filter(r=>r.s.n>0).sort((a,b)=>b.s.n-a.s.n).map(r=>{
+    const thin = r.s.n < 25;   // below this the rate is noise, so do not print one
+    return `<div class="r${thin?" thin":""}"><span class="rl">${esc(r.label)}</span>`+
+      barHTML(r.s, thin)+
+      `<span class="rv">${thin?"—":pctv(r.s.rate)}</span><span class="rn">n=${r.s.n}</span></div>`;
+  }).join("");
+}
+
+/* ---------- ground detail ---------- */
+function renderGround(g){
+  const s = statOf({ground:g}), v = vOf(s), ratio = s.rate/BASE_R;
+  const mix = FACETS.disposition.values.map(d=>({
+      label: FACETS.disposition.names[d], d,
+      n: MAPPED.reduce((a,m)=>a+((m.ground===g&&m.disposition===d)?1:0),0)
+    })).filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
+  const verdict = v==="ns"
+    ? `Not distinguishable from the ${pctv(BASE_R)} base rate — the interval overlaps it.`
+    : `${v==="above"?"Above":"Below"} the ${pctv(BASE_R)} base rate: about ${ratio.toFixed(1)}× the corpus average.`;
+  document.getElementById("gdbody").innerHTML = `
+    <div class="head">
+      <div><div class="v hero" style="color:${colOf(s)}">${pctv(s.rate)}</div><div class="l">sustain rate</div></div>
+      <div><div class="v">${s.k} / ${s.n}</div><div class="l">sustained / decisions</div></div>
+      <div><div class="v">${pctv(s.lo)} – ${pctv(s.hi)}</div><div class="l">95% confidence interval</div></div>
+    </div>
+    <p class="note"><b style="color:var(--ink)">${esc(GROUND_NAMES[g])}.</b> ${verdict}</p>
+    <div class="mix">${mix.map(m=>`<span style="width:${m.n/s.n*100}%;background:${
+        m.d==="sustained"?"var(--above)":"var(--flat)"};opacity:${
+        m.d==="sustained"?1:(m.d==="denied"?.6:.32)}"></span>`).join("")}</div>
+    <div class="mixkey">${mix.map(m=>`<span>${esc(m.label)} <b style="color:var(--ink)">${m.n}</b></span>`).join("")}</div>
+    <div class="cols">
+      <div><h3>By procurement authority</h3><div class="rows">${facetRows("procurement_authority", g)}</div></div>
+      <div><h3>By protest posture</h3><div class="rows">${facetRows("protest_posture", g)}</div></div>
+    </div>
+    <h3>Sustained decisions <span class="sm">${s.hits.length} of ${s.n}</span></h3>
+    <div class="chips">${s.hits.slice(0,60).map(m=>
+      `<a class="chip" href="${m.url}" target="_blank" rel="noopener noreferrer">${esc(m.id.toUpperCase())}</a>`).join("")}
+      ${s.hits.length>60?`<span class="chip" style="color:var(--mut)">+${s.hits.length-60} more</span>`:""}</div>`;
+}
+
+/* ---------- build a protest ---------- */
+function renderBuild(){
+  const g = bdg.value, a = bda.value, p = bdp.value;
+  const f = {}; if(g) f.ground=g; if(a) f.procurement_authority=a; if(p) f.protest_posture=p;
+  const s = statOf(f), v = vOf(s), thin = s.n < 30;
+  const parts = [g?GROUND_NAMES[g]:null, a?FACETS.procurement_authority.names[a]:null,
+                 p?FACETS.protest_posture.names[p]:null].filter(Boolean);
+  const cmp = [{label:"This slice", s}];
+  if(g) cmp.push({label:GROUND_NAMES[g]+", any authority", s:statOf({ground:g})});
+  cmp.push({label:"Whole corpus", s:{n:BASE_N,k:BASE_K,rate:BASE_R,lo:BASE_R,hi:BASE_R}});
+  // ranked by the bottom of the interval so a 25-decision fluke cannot lead
+  const ranked = ALL_GROUNDS.map(gg=>{
+    const ff = {ground:gg}; if(a) ff.procurement_authority=a; if(p) ff.protest_posture=p;
+    return {g:gg, label:GROUND_NAMES[gg], s:statOf(ff)};
+  }).filter(r=>r.s.n>=25).sort((x,y)=>y.s.lo-x.s.lo).slice(0,10);
+  const combos = ALL_GROUNDS.length * FACETS.procurement_authority.values.length
+                 * FACETS.protest_posture.values.length;
+  const line = parts.length===0 ? "no filters applied, so this is the corpus base rate itself."
+    : s.n===0 ? "no decisions match this combination."
+    : thin ? `<b style="color:var(--ink)">only ${s.n} decisions.</b> The interval spans ${pctv(s.hi-s.lo)}; treat this as a hint, not a rate.`
+    : v==="ns" ? `big enough to read, and it overlaps the ${pctv(BASE_R)} base rate.`
+    : s.n<100 ? `${v} the base rate, but on ${s.n} decisions the interval still spans ${pctv(s.hi-s.lo)} — suggestive, not settled.`
+    : `<b style="color:var(--ink)">${v} the base rate</b>, and the interval clears it.`;
+  document.getElementById("bdbody").innerHTML = `
+    <div class="head">
+      <div><div class="v hero" style="color:${thin?"var(--mut)":colOf(s)}">${s.n?pctv(s.rate):"—"}</div>
+        <div class="l">sustain rate for this slice</div></div>
+      <div><div class="v">${s.k} / ${s.n}</div><div class="l">sustained / decisions</div></div>
+      <div><div class="v">${s.n?pctv(s.lo)+" – "+pctv(s.hi):"—"}</div><div class="l">95% confidence interval</div></div>
+    </div>
+    <p class="note">${parts.length?esc(parts.join(" · ")):"All "+BASE_N.toLocaleString()+" decisions"} — ${line}</p>
+    <h3>How it compares</h3>
+    <div class="rows">${cmp.map(c=>`<div class="r"><span class="rl">${esc(c.label)}</span>`+
+      barHTML(c.s,false)+`<span class="rv">${pctv(c.s.rate)}</span><span class="rn">n=${c.s.n}</span></div>`).join("")}</div>
+    <h3>Best grounds for this acquisition <span class="sm">n ≥ 25, ranked by the bottom of the interval</span></h3>
+    <div class="rows">${ranked.map(r=>`<div class="r"><a class="rl" data-g="${r.g}">${esc(r.label)}</a>`+
+      barHTML(r.s,false)+`<span class="rv">${pctv(r.s.rate)}</span><span class="rn">n=${r.s.n}</span></div>`).join("")
+      || `<div class="note">No ground has 25 or more decisions in this slice.</div>`}</div>
+    <div class="warn"><b>Read this before trusting a narrow slice.</b> These three menus reach
+      ${ALL_GROUNDS.length} × ${FACETS.procurement_authority.values.length} × ${FACETS.protest_posture.values.length}
+      = ${combos.toLocaleString()} combinations. At 95% confidence roughly ${Math.round(combos*0.05).toLocaleString()}
+      of them clear the base rate by chance alone. Slicing until a number looks good is how that happens — decide
+      which slice matters before you look, and prefer the ones with a few hundred decisions behind them.</div>`;
+  document.querySelectorAll("#bdbody a.rl").forEach(a2=>
+    a2.onclick = ()=>{ gdsel.value = a2.dataset.g; setTab("ground"); });
+}
+
+/* ---------- wiring ---------- */
+const gdsel = document.getElementById("gdsel"),
+      bdg = document.getElementById("bdg"), bda = document.getElementById("bda"), bdp = document.getElementById("bdp");
+gdsel.innerHTML = GROUND_ORDER.map(g=>`<option value="${g}">${esc(GROUND_NAMES[g])}</option>`).join("");
+gdsel.onchange = ()=>renderGround(gdsel.value);
+function fillSel(sel, key, anyLabel){
+  sel.innerHTML = `<option value="">${anyLabel}</option>` +
+    FACETS[key].values.map(v=>`<option value="${v}">${esc(FACETS[key].names[v])}</option>`).join("");
+  sel.onchange = renderBuild;
+}
+fillSel(bdg, "ground", "Any ground");
+fillSel(bda, "procurement_authority", "Any authority");
+fillSel(bdp, "protest_posture", "Any posture");
+document.getElementById("bdreset").onclick = ()=>{ bdg.value=bda.value=bdp.value=""; renderBuild(); };
+
 /* ================= refresh + tabs ================= */
 let curTab = "map";
 let lastList = [];
@@ -820,22 +1158,33 @@ function refresh(){
 }
 searchEl.addEventListener("input", refresh);
 
-const tabM = document.getElementById("tab-map"),
-      tabT = document.getElementById("tab-table"),
-      tabC = document.getElementById("tab-chat");
+const TABS = {map:"tab-map", table:"tab-table", chat:"tab-chat", ground:"tab-ground", build:"tab-build"};
+const VIEWS = {map:"mapview", table:"tableview", chat:"chatview", ground:"groundview", build:"buildview"};
 function setTab(which){
   curTab = which;
-  tabM.classList.toggle("on", which==="map");
-  tabT.classList.toggle("on", which==="table");
-  tabC.classList.toggle("on", which==="chat");
-  document.getElementById("mapview").classList.toggle("hidden", which!=="map");
-  document.getElementById("tableview").classList.toggle("hidden", which!=="table");
-  document.getElementById("chatview").classList.toggle("hidden", which!=="chat");
-  if(which==="table") renderTable(lastList);
+  Object.entries(TABS).forEach(([k,id])=>document.getElementById(id).classList.toggle("on", which===k));
+  Object.entries(VIEWS).forEach(([k,id])=>document.getElementById(id).classList.toggle("hidden", which!==k));
+  if(which!=="map") document.getElementById("pop").classList.remove("open");
+  if(which==="table")  renderTable(lastList);
+  if(which==="ground") renderGround(gdsel.value);
+  if(which==="build")  renderBuild();
 }
-tabM.onclick = ()=>setTab("map");
-tabT.onclick = ()=>setTab("table");
-tabC.onclick = ()=>setTab("chat");
+Object.entries(TABS).forEach(([k,id])=>document.getElementById(id).onclick = ()=>setTab(k));
+
+/* deep links: #tab=ground&g=oci or #tab=build&g=oci&a=far_8_4_fss&p=pre_award */
+(function initHash(){
+  const h = location.hash || "";
+  const pick = (re, sel, valid) => {
+    const m = re.exec(h); if(!m) return;
+    if(valid(m[1])) sel.value = m[1];
+  };
+  pick(/[#&]g=([a-z0-9_]+)/, gdsel, v=>ALL_GROUNDS.includes(v));
+  pick(/[#&]g=([a-z0-9_]+)/, bdg,   v=>ALL_GROUNDS.includes(v));
+  pick(/[#&]a=([a-z0-9_]+)/, bda,   v=>FACETS.procurement_authority.values.includes(v));
+  pick(/[#&]p=([a-z0-9_]+)/, bdp,   v=>FACETS.protest_posture.values.includes(v));
+  const t = /[#&]tab=(\w+)/.exec(h);
+  if(t && TABS[t[1]]) setTab(t[1]);
+})();
 
 /* ---------- collapsible sidebar ---------- */
 const wrapEl = document.getElementById("wrap");

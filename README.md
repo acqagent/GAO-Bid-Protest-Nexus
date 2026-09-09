@@ -5,14 +5,15 @@ A self-hosted, interactive dashboard over **5,986 GAO bid protest decisions**
  Python server adds the Dynamic Search view (grounded search over the full
  decision text).
 
-## The three tabs
+## The five tabs
 
-- **Map** — an interactive **3D** neural-network-style graph: 33 protest
-  grounds (left layer) → sub-filter values (Disposition, Overall Outcome,
-  Procurement Authority, Protest Posture; middle layer) → individual
-  decisions (right layer). **All 5,986 decisions are rendered** as dots,
-  grouped into a ring sector per ground; dots that don't match the active
-  filters are drawn dim. Node sizes and edge weights scale with the number of
+- **Map** — an interactive **3D** constellation: the 33 protest grounds sit on
+  a sphere, each surrounded by its own cluster of decisions, with the four
+  sub-filter facets (Disposition, Overall Outcome, Procurement Authority,
+  Protest Posture) forming a core at the centre that every connection runs
+  through. **All 5,986 decisions are rendered** as dots, and a ground's cluster
+  grows with the number of decisions on it, so volume is readable before you
+  read a label. Dots that don't match the active filters are drawn dim. Node sizes and edge weights scale with the number of
   matching decisions. Drag to rotate, scroll to zoom, right/ctrl-drag to pan,
   double-click to reset. Hover a node to trace its connections; click any
   node for a popup with sub-filter breakdowns and the matching decisions
@@ -25,6 +26,21 @@ A self-hosted, interactive dashboard over **5,986 GAO bid protest decisions**
 - **Dynamic Search** — hybrid retrieval over the full decision text (dense
   vectors + BM25, RRF fusion, cross-encoder re-ranking). Returns the matching
   passages, each linked back to its source decision and PDF.
+- **Ground detail** — how often one ground is sustained, against the 12.2%
+  corpus base rate, with the 95% confidence interval its sample size supports,
+  a disposition breakdown, splits by authority and posture, and links to every
+  sustained decision on that ground.
+- **Build a protest** — pick ground, procurement authority and posture, and the
+  sustain rate is recomputed on just those decisions, with the interval that
+  slice supports and a ranking of the grounds available within it.
+
+The last two tabs read the whole corpus and ignore the side-panel filters:
+they answer what the odds are on a ground, which is a property of the data
+rather than of the current selection. Both carry their intervals everywhere,
+because most of the apparent spread between grounds is sampling noise —
+of the 33 grounds only three (OCI, Corrective Action Challenge and Technical
+Evaluation) are distinguishable from the base rate once you correct for
+testing 33 of them.
 
 **All decisions are in the 3D map.** Unlike a flat list, the map renders every
 one of the 5,986 decision dots at once, so nothing is hidden behind a cap —
