@@ -224,8 +224,15 @@ and needs only the standard library plus network access to gao.gov. While the
 server is running, the **find PDF** link in the dashboard does the same thing
 for one decision at a time.
 
-Current state in this repo: **1,915 of 5,986** decisions carry a direct PDF
-link. The remaining 4,071 show as landing pages until the script is run.
+Before it fetches anything, the script also takes the links that need no
+network at all: GAO publishes **one document per consolidated docket** and the
+asset filename names every B-number it covers
+(`b-414706,b-414380.2.pdf`), so each name in a filename already known points at
+that same PDF. It runs again after fetching, because every consolidated filename
+a run discovers unlocks its siblings too.
+
+Current state in this repo: **1,926 of 5,986** decisions carry a direct PDF
+link. The remaining 4,060 show as landing pages until the script is run.
 
 ## Minimum hardware requirements
 

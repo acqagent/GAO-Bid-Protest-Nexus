@@ -29,6 +29,7 @@ import re
 import sys
 import threading
 import time
+import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -41,6 +42,34 @@ HTML = ROOT / "visualization" / "map.html"
 LINKS = analysis.PDF_LINKS
 
 _print_lock = threading.Lock()
+
+
+BNUM = re.compile(r"b-\d+(?:\.\d+)?", re.I)
+
+
+def infer_from_dockets(records, cache):
+    """Free links, no network: GAO publishes ONE document per consolidated
+    docket, and the asset filename names every B-number it covers
+    (b-414706,b-414380.2.pdf). So each name in a filename we already know points
+    at that same PDF. Worth re-running after a fetch, since every consolidated
+    filename that run discovers unlocks its siblings too."""
+    known = {}
+    for rec in records:
+        i = rec["id"].lower()
+        u = cache.get(i) or (rec.get("pdf") if not needs_pdf(rec) else None)
+        if u:
+            known[i] = u
+    added = 0
+    for owner, url in list(known.items()):
+        tail = urllib.parse.unquote(url.rsplit("/", 1)[-1]).lower()[:-4]
+        members = BNUM.findall(tail)
+        if len(members) < 2:
+            continue
+        for m in members:
+            if m not in known:
+                cache[m] = known[m] = url
+                added += 1
+    return added
 
 
 def needs_pdf(rec):
@@ -168,6 +197,11 @@ def main():
         if not records:
             sys.exit(f"no decision with id {args.only}")
 
+    inferred = infer_from_dockets(records, cache)
+    if inferred:
+        save(cache)
+        print(f"[docket] {inferred} link(s) inferred from consolidated filenames")
+
     todo = [r for r in records if needs_pdf(r) and (page_for(r) or r.get("id"))
             and (args.refresh or r["id"].lower() not in cache)]
     have = sum(1 for r in records if not needs_pdf(r))
@@ -194,6 +228,11 @@ def main():
     print(f"[done] {done['hit']} found ({done['asset']} by asset url, "
           f"{done['scraped']} by reading the page), {done['miss']} not found, "
           f"{int(time.time() - t0)}s → {LINKS}")
+    again = infer_from_dockets(records, cache)
+    if again:
+        save(cache)
+        print(f"[docket] {again} more inferred from the consolidated filenames "
+              f"this run turned up")
     print("[next] python3 scripts/resolve_pdfs.py --apply")
 
 
