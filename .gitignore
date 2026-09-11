@@ -13,3 +13,8 @@ vector/embeddings.npy
 .venv/
 __pycache__/
 *.pyc
+
+# Resolved gao.gov PDF links — a local cache written by scripts/resolve_pdfs.py
+# and by the server's "find PDF". Run it with --apply to bake the links into
+# data/mapped-decisions.json and visualization/map.html, which are tracked.
+data/pdf-links.json

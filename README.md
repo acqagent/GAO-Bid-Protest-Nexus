@@ -1,11 +1,12 @@
 # GAO Bid Protest Nexus
 
 A self-hosted, interactive dashboard over **5,986 GAO bid protest decisions**
-(~5,978 decision PDFs). One HTML file carries the Map and Table views; a small
- Python server adds the Dynamic Search view (grounded search over the full
- decision text).
+(~5,978 decision PDFs). One HTML file carries the Map, Table and Analysis
+views; a small Python server adds the Dynamic Search view (grounded search over
+the full decision text) and takes over the work the Analysis tab would
+otherwise ask of your browser.
 
-## The four tabs
+## The five tabs
 
 - **Map** — an interactive **3D** constellation: the 33 protest grounds sit on
   a sphere, each surrounded by its own cluster of decisions, with the four
@@ -26,6 +27,12 @@ A self-hosted, interactive dashboard over **5,986 GAO bid protest decisions**
 - **Dynamic Search** — hybrid retrieval over the full decision text (dense
   vectors + BM25, RRF fusion, cross-encoder re-ranking). Returns the matching
   passages, each linked back to its source decision and PDF.
+- **Analysis** — key-element summaries of individual decisions, and
+  comparisons across a selection of them, written by any **OpenAI-compatible**
+  model endpoint. Select decisions anywhere in the dashboard — the checkbox in
+  the Table's first column, a Map popup, a Dynamic Search result — or hit the
+  **✦ Analyze** button on any single decision. Output lands on this tab, never
+  in the view you picked from. See [Decision analysis](#decision-analysis).
 - **Ground detail** — how often one ground is sustained, against the 12.2%
   corpus base rate, with the 95% confidence interval its sample size supports,
   a disposition breakdown, splits by authority and posture, and links to every
@@ -49,7 +56,8 @@ rows).
 
 All decision text and links come from the U.S. Government Accountability
 Office (public domain) at gao.gov. The dashboard itself is a single
-self-contained HTML file — Map and Table work with no server at all.
+self-contained HTML file — Map, Table and Analysis all work with no server at
+all (Analysis needs a model endpoint, and asks you for the decision).
 
 ## Downloads
 
@@ -57,6 +65,9 @@ self-contained HTML file — Map and Table work with no server at all.
   `visualization/map.html`. Unzip and open the file in any browser: you get
   the Map and Table tabs (all filters, the 3D map with all 5,986 decisions,
   the full decision table). No Python, no server, no models — fully offline.
+  The **Analysis** tab works here too, once you point it at a model endpoint
+  and hand it the decision — see
+  [Decision analysis](#decision-analysis).
   **Download from the [Releases page](../../releases/latest).**
 - **Full** (`gao-bid-protest-nexus-full.zip`, ~250 MB) — everything in the
   basic zip plus the Dynamic Search backend (server scripts, the
@@ -80,9 +91,10 @@ contain the vector index — `vector/chunks.jsonl` (146 MB) and
 limit. Get them from the
 [full zip](https://acqagent.ai/downloads/gao-bid-protest-nexus-full.zip).
 
-Cloning the repo is enough to open the Map and Table tabs. **Dynamic
+Cloning the repo is enough to open the Map, Table and Analysis tabs. **Dynamic
 Search additionally requires the two `vector/` files** — without them
-`scripts/serve.py` has no index to search.
+`scripts/serve.py` still runs, it just has no index to search (and the Analysis
+tab then sources decisions from their PDFs instead of from the index).
 
 ## Quick start
 
@@ -103,6 +115,16 @@ python -m venv .venv
 # open http://127.0.0.1:8765/
 ```
 
+To also use the **Analysis** tab without pasting a key into the browser, set
+the endpoint in the server's environment first:
+
+```bash
+export OPENAI_BASE_URL=https://api.openai.com/v1   # or any compatible endpoint
+export OPENAI_MODEL=gpt-4o-mini
+export OPENAI_API_KEY=sk-...
+.venv/bin/python scripts/serve.py
+```
+
 The first run downloads the two local models (~1.4 GB) from
 huggingface.co; they are cached in `~/.cache/huggingface` and afterwards the
 server runs fully offline.
@@ -111,8 +133,87 @@ server runs fully offline.
 serve `visualization/` with any static file server).
 
 Configuration (top of `scripts/serve.py`): `HOST` (loopback by default),
-`PORT` (8765), `MAX_K` (search result cap, 50). The server exposes
-`GET /api/search?q=<question>&k=<n>` for the Dynamic Search tab.
+`PORT` (8765), `MAX_K` (search result cap, 50), `MAX_COMPARE` (decisions in one
+comparison, 12). The server exposes:
+
+| Endpoint | Used by |
+|---|---|
+| `GET /api/search?q=<question>&k=<n>` | Dynamic Search |
+| `GET /api/config` | what this server can do (index loaded? PDF extraction? key set?) |
+| `GET /api/pdf?id=<B-number>` | resolving a gao.gov landing page to the actual PDF |
+| `POST /api/analyze[?stream=1]` | one decision's key-element summary |
+| `POST /api/compare[?stream=1]` | one comparison across several decisions |
+
+**The vector index is now optional.** Without `vector/chunks.jsonl` and
+`vector/embeddings.npy` the server still starts and still serves the dashboard,
+the PDF resolver and the analysis API — only Dynamic Search switches off, and
+`/api/config` says why.
+
+## Decision analysis
+
+The Analysis tab summarizes a decision into a fixed set of key elements —
+snapshot, procurement authority and posture, grounds raised, **GAO's ruling
+ground by ground**, the reasoning, competitive prejudice, timeliness and
+jurisdiction, disposition and recommendation, authorities cited, the practical
+takeaway, and an explicit "gaps and low confidence" section. Comparing a
+selection produces a different shape: a side-by-side table, what the decisions
+share, where they diverge and why, and the line GAO is drawing across them.
+
+**Selecting.** Every decision in the dashboard carries a **Select** control
+(the Table's first column, Map popups, Dynamic Search results) and a
+**✦ Analyze** button that jumps straight to the Analysis tab and runs that one
+on its own. A tray along the bottom shows what is selected; the cap is 12,
+because a comparison has to fit one context window. The selection survives a
+reload, and `#tab=an&pick=b-407234,b-417327` deep-links into it.
+
+**Where the text comes from**, in order, reported on every result:
+
+1. the **local corpus** — the same chunks Dynamic Search searches, so no
+   network and no PDF is needed (full build, server running);
+2. the **decision PDF** — fetched from gao.gov and extracted server-side
+   (needs `pypdf`; `pip install pypdf`);
+3. **what you give it** — drop a PDF on the card or paste the text. This is the
+   basic build's normal path, since a browser cannot read gao.gov's files from
+   another page and the single HTML file carries no decision text.
+
+**Configuring the endpoint.** The *Model endpoint* panel on the Analysis tab
+takes a base URL, a model name and a key. Anything that speaks the OpenAI
+`/v1/chat/completions` shape works: OpenAI, OpenRouter, Together, Groq,
+Fireworks, LiteLLM, vLLM, llama.cpp, LM Studio, Ollama's `/v1` shim. With the
+server running, set `OPENAI_API_KEY` in its environment instead and the key
+never reaches the browser; typed keys are kept in that browser's `localStorage`
+only. Without the server the page calls the endpoint directly, so the endpoint
+must send CORS headers.
+
+**What leaves your machine.** The decision text and your question go to
+whichever endpoint you configure. The decisions are public record, but review
+that against your own rules — and note that a local endpoint (LM Studio, Ollama,
+vLLM) keeps everything in-house.
+
+**Read the decision.** These summaries are a reading aid over a public record,
+not legal advice, and a model can misread a holding. Every result links back to
+the decision it was written from; the prompts are tuned to say "not stated in
+the decision" rather than guess, and to flag their own gaps.
+
+## Decision PDF links
+
+The corpus carries a direct `gao.gov/assets/....pdf` link for some decisions and
+only a `gao.gov/products/` landing page for the rest. The dashboard labels the
+two apart rather than calling both "PDF", so a link never lands somewhere you
+did not expect.
+
+To turn the landing pages into direct PDF links for good — which the basic
+build ships with, since the data is embedded in `map.html`:
+
+```bash
+python3 scripts/resolve_pdfs.py             # follow each page, cache what it finds
+python3 scripts/resolve_pdfs.py --apply     # write them into the data and the dashboard
+```
+
+It is resumable, rate-limited, and needs only the standard library plus network
+access to gao.gov. `--dry-run` counts the work first. While the server is
+running, the **find PDF** link in the dashboard does the same thing for one
+decision at a time.
 
 ## Minimum hardware requirements
 
@@ -174,9 +275,12 @@ unchanged with any model or API.
 In the repo *and* the full zip:
 
 ```
-visualization/map.html   the dashboard (all Map/Table data embedded)
-scripts/serve.py         HTTP server: static files + /api/search
+visualization/map.html   the dashboard (all Map/Table/Analysis data embedded)
+scripts/serve.py         HTTP server: static files + search + analysis API
 scripts/searchlib.py     hybrid search core (dense + BM25 + RRF + re-rank)
+scripts/analysis.py      decision text sourcing, PDF handling, analysis prompts
+scripts/llm.py           OpenAI-compatible chat client (standard library only)
+scripts/resolve_pdfs.py  one-off: gao.gov landing pages -> direct PDF links
 vector/meta.json         index metadata (model, dimensionality, chunk count)
 data/map.json            decision metadata (B-numbers, gao.gov/PDF links)
 data/mapped-decisions.json  per-decision ground + four filter values
