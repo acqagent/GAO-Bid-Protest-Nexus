@@ -206,14 +206,26 @@ To turn the landing pages into direct PDF links for good — which the basic
 build ships with, since the data is embedded in `map.html`:
 
 ```bash
-python3 scripts/resolve_pdfs.py             # follow each page, cache what it finds
+python3 scripts/resolve_pdfs.py --dry-run   # count the work, fetch nothing
+python3 scripts/resolve_pdfs.py             # resolve, caching as it goes
 python3 scripts/resolve_pdfs.py --apply     # write them into the data and the dashboard
 ```
 
-It is resumable, rate-limited, and needs only the standard library plus network
-access to gao.gov. `--dry-run` counts the work first. While the server is
-running, the **find PDF** link in the dashboard does the same thing for one
-decision at a time.
+**How it resolves.** gao.gov files a decision's PDF under one of two spellings,
+`/assets/b-417327.pdf` or `/assets/417327.pdf`, and the record does not say
+which. Of the links the corpus already has, 82% are one of the two, and the
+B-number predicts the order to try (the bare form dominates from B-420000 up).
+So each decision costs one or two `HEAD` requests, and only the ~18% that are
+consolidated dockets fall back to fetching and parsing the landing page. A link
+is written only when gao.gov confirms the file is there — nothing is guessed.
+
+It is resumable (Ctrl-C is safe, progress is saved as it goes), rate-limited,
+and needs only the standard library plus network access to gao.gov. While the
+server is running, the **find PDF** link in the dashboard does the same thing
+for one decision at a time.
+
+Current state in this repo: **1,915 of 5,986** decisions carry a direct PDF
+link. The remaining 4,071 show as landing pages until the script is run.
 
 ## Minimum hardware requirements
 

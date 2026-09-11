@@ -309,6 +309,59 @@ def _remember(decision_id, pdf_url):
             pass
 
 
+
+# gao.gov files a decision's PDF under one of two spellings — /assets/b-417327.pdf
+# or /assets/417327.pdf — and which one is not derivable from the record. Of the
+# links the corpus already has, 85% are one of these two, and the B-number says
+# which to try first: the bare form dominates from B-420000 up, the b- form below
+# B-300000. Trying them is one HEAD request, against a full HTML page fetch for
+# the landing page, so it is both faster and lighter on gao.gov — and nothing is
+# recorded unless the server confirms the file is really there.
+ASSET_BASE = "https://www.gao.gov/assets/"
+
+
+def candidate_pdf_urls(decision_id):
+    """The two URLs worth testing for a decision, likeliest first."""
+    did = (decision_id or "").strip().lower()
+    if not did.startswith("b-"):
+        return []
+    bare, prefixed = ASSET_BASE + did[2:] + ".pdf", ASSET_BASE + did + ".pdf"
+    m = re.match(r"b-(\d+)", did)
+    n = int(m.group(1)) if m else 0
+    return [bare, prefixed] if n >= 410000 else [prefixed, bare]
+
+
+def is_pdf_at(url, timeout=20):
+    """True only if that URL really serves a PDF. HEAD, or a 4-byte GET for
+    servers that will not answer HEAD."""
+    if urllib.parse.urlparse(url).scheme not in ("http", "https") or not _host_ok(url):
+        return False
+    try:
+        req = urllib.request.Request(url, method="HEAD",
+                                     headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            if r.status == 200 and "pdf" in r.headers.get("Content-Type", "").lower():
+                return True
+            if r.status == 200 and not r.headers.get("Content-Type"):
+                pass          # no type header — fall through to the byte check
+            elif r.status == 200:
+                return False  # 200 with a non-PDF type is gao.gov's soft 404
+            else:
+                return False
+    except urllib.error.HTTPError as e:
+        if e.code not in (405, 501):
+            return False
+    except Exception:
+        return False
+    try:
+        req = urllib.request.Request(
+            url, headers={"User-Agent": USER_AGENT, "Range": "bytes=0-3"})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.read(4).startswith(b"%PDF")
+    except Exception:
+        return False
+
+
 _ASSET_RE = re.compile(r'href="([^"]*?/assets/[^"]*?\.pdf)"', re.I)
 
 
@@ -332,16 +385,23 @@ def scrape_pdf_url(page_url):
     return out[0]
 
 
-def resolve_pdf_url(decision_id, known_pdf=None, page_url=None, use_cache=True):
+def resolve_pdf_url(decision_id, known_pdf=None, page_url=None, use_cache=True,
+                    try_candidates=True):
     """Best real .pdf URL for a decision. Returns (url, how)."""
     did = (decision_id or "").lower()
     if known_pdf and known_pdf.lower().endswith(".pdf"):
         return known_pdf, "already a pdf"
     if use_cache and did and did in link_cache():
         return link_cache()[did], "cache"
+    if try_candidates:
+        for cand in candidate_pdf_urls(did):
+            if is_pdf_at(cand):
+                if did:
+                    _remember(did, cand)
+                return cand, "asset url"
     page = page_url or known_pdf
     if not page:
-        return None, "no gao.gov page known"
+        return None, "no gao.gov page known, and neither asset url exists"
     found = scrape_pdf_url(page)
     if found and did:
         _remember(did, found)

@@ -56,15 +56,18 @@ def page_for(rec):
 
 
 def resolve_all(todo, cache, sleep, workers, retries):
-    done = {"n": 0, "hit": 0, "miss": 0}
+    done = {"n": 0, "hit": 0, "miss": 0, "asset": 0, "scraped": 0}
     total = len(todo)
 
     def one(rec):
         did, page = rec["id"].lower(), page_for(rec)
-        found, err = None, ""
+        found, how, err = None, "", ""
         for attempt in range(retries + 1):
             try:
-                found = analysis.scrape_pdf_url(page)
+                # Tries the two /assets/ spellings first (one HEAD each, and the
+                # answer for ~82% of decisions), then reads the landing page.
+                found, how = analysis.resolve_pdf_url(
+                    did, page_url=page, use_cache=False)
                 break
             except Exception as e:
                 err = f"{type(e).__name__}: {e}"
@@ -76,10 +79,12 @@ def resolve_all(todo, cache, sleep, workers, retries):
             if found:
                 cache[did] = found
                 done["hit"] += 1
+                done["asset" if how == "asset url" else "scraped"] += 1
             else:
                 done["miss"] += 1
             if done["n"] % 25 == 0 or done["n"] == total:
-                print(f"  {done['n']}/{total}  found {done['hit']}  "
+                print(f"  {done['n']}/{total}  found {done['hit']} "
+                      f"({done['asset']} by asset url, {done['scraped']} by page)  "
                       f"missed {done['miss']}", flush=True)
                 save(cache)
             if not found and done["miss"] <= 10:
@@ -163,7 +168,7 @@ def main():
         if not records:
             sys.exit(f"no decision with id {args.only}")
 
-    todo = [r for r in records if needs_pdf(r) and page_for(r)
+    todo = [r for r in records if needs_pdf(r) and (page_for(r) or r.get("id"))
             and (args.refresh or r["id"].lower() not in cache)]
     have = sum(1 for r in records if not needs_pdf(r))
     print(f"[scan] {len(records)} decisions · {have} already direct · "
@@ -186,7 +191,8 @@ def main():
     except KeyboardInterrupt:
         save(cache)
         sys.exit(f"\n[stop] interrupted — {len(cache)} link(s) saved to {LINKS}")
-    print(f"[done] {done['hit']} found, {done['miss']} not found, "
+    print(f"[done] {done['hit']} found ({done['asset']} by asset url, "
+          f"{done['scraped']} by reading the page), {done['miss']} not found, "
           f"{int(time.time() - t0)}s → {LINKS}")
     print("[next] python3 scripts/resolve_pdfs.py --apply")
 
