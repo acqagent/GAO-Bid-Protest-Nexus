@@ -207,9 +207,17 @@ build ships with, since the data is embedded in `map.html`:
 
 ```bash
 python3 scripts/resolve_pdfs.py --dry-run   # count the work, fetch nothing
-python3 scripts/resolve_pdfs.py             # resolve, caching as it goes
+python3 scripts/resolve_pdfs.py --csv audit.csv   # resolve, saving as it goes
 python3 scripts/resolve_pdfs.py --apply     # write them into the data and the dashboard
 ```
+
+The script is **standalone**: one file, standard library only, no pip install,
+no API key and no model — it only speaks HTTP to gao.gov. Copy it anywhere and
+point `--input` at `mapped-decisions.json`, `map.json`, or even the single-file
+`map.html` from the basic zip. `--csv` writes a per-decision audit trail (id,
+url, which method found it, status) and `--recheck` re-verifies links already
+held rather than trusting them. Ctrl-C is safe; a rerun continues where it
+stopped.
 
 **How it resolves.** gao.gov files a decision's PDF under one of two spellings,
 `/assets/b-417327.pdf` or `/assets/417327.pdf`, and the record does not say
@@ -219,10 +227,9 @@ So each decision costs one or two `HEAD` requests, and only the ~18% that are
 consolidated dockets fall back to fetching and parsing the landing page. A link
 is written only when gao.gov confirms the file is there — nothing is guessed.
 
-It is resumable (Ctrl-C is safe, progress is saved as it goes), rate-limited,
-and needs only the standard library plus network access to gao.gov. While the
-server is running, the **find PDF** link in the dashboard does the same thing
-for one decision at a time.
+Four workers 0.4s apart by default — be kind, gao.gov is a public service.
+While the dashboard server is running, its **find PDF** link does the same
+thing for one decision at a time.
 
 Before it fetches anything, the script also takes the links that need no
 network at all: GAO publishes **one document per consolidated docket** and the
