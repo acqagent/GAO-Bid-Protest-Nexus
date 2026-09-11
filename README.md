@@ -190,6 +190,34 @@ whichever endpoint you configure. The decisions are public record, but review
 that against your own rules — and note that a local endpoint (LM Studio, Ollama,
 vLLM) keeps everything in-house.
 
+### Headless
+
+Everything the Analysis tab does is available from a terminal, with no browser
+and no display — over SSH, in cron, in CI, in a container:
+
+```bash
+export OPENAI_BASE_URL=http://localhost:1234/v1   # LM Studio, Ollama, vLLM...
+export OPENAI_MODEL=your-local-model
+
+python3 scripts/analyze.py B-417327                       # one, to stdout
+python3 scripts/analyze.py --ids-file ids.txt --out reports/
+python3 scripts/analyze.py --filter ground=oci,disposition=sustained \
+        --limit 8 --compare --out reports/ --json reports/all.json
+```
+
+Select with B-numbers, `--ids-file`, stdin, or `--filter` over the corpus
+facets. `--list` prints the selection without calling anything; `--dry-run`
+reports where each decision's text would come from; `--compare` adds one
+comparison across the set, reusing the individual analyses it just wrote.
+Output is one Markdown file per decision plus `comparison.md`, and `--json`
+gives the same machine-readable. Exit status is 0 only if every decision
+produced an analysis.
+
+Sourcing text from the local corpus this way **needs no models at all** —
+`vector/chunks.jsonl` is read directly, so numpy and sentence-transformers are
+never imported. Those are only for Dynamic Search. `scripts/resolve_pdfs.py` is
+headless on the same terms, and imports nothing outside the standard library.
+
 **Read the decision.** These summaries are a reading aid over a public record,
 not legal advice, and a model can misread a holding. Every result links back to
 the decision it was written from; the prompts are tuned to say "not stated in
@@ -306,6 +334,7 @@ scripts/serve.py         HTTP server: static files + search + analysis API
 scripts/searchlib.py     hybrid search core (dense + BM25 + RRF + re-rank)
 scripts/analysis.py      decision text sourcing, PDF handling, analysis prompts
 scripts/llm.py           OpenAI-compatible chat client (standard library only)
+scripts/analyze.py       headless CLI: analyze and compare without a browser
 scripts/resolve_pdfs.py  one-off: gao.gov landing pages -> direct PDF links
 vector/meta.json         index metadata (model, dimensionality, chunk count)
 data/map.json            decision metadata (B-numbers, gao.gov/PDF links)
