@@ -9,8 +9,11 @@ Used by scripts/serve.py (dashboard /api/search) and scripts/query.py (CLI).
 """
 
 import json
+import os
 import re
 import time
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 import numpy as np
@@ -22,8 +25,12 @@ CHUNKS_JSONL = VEC_DIR / "chunks.jsonl"
 EMBEDDINGS_NPY = VEC_DIR / "embeddings.npy"
 META_JSON = VEC_DIR / "meta.json"
 
-DENSE_MODEL = "BAAI/bge-base-en-v1.5"
-QUERY_PREFIX = "Represent this query for retrieving relevant passages: "
+# Defaults for an index built before vector/meta.json recorded these. A newer
+# index declares its own model, backend and query prefix, and this follows it —
+# scripts/vectorize.py can build the index with anything, including an
+# OpenAI-compatible embeddings endpoint, and search has to match at query time.
+DEFAULT_DENSE_MODEL = "BAAI/bge-base-en-v1.5"
+DEFAULT_QUERY_PREFIX = "Represent this query for retrieving relevant passages: "
 RERANK_MODEL = "BAAI/bge-reranker-base"
 
 RRF_K = 60            # RRF damping constant
@@ -40,6 +47,36 @@ def tokenize(text):
             + re.findall(r"[a-z0-9]+", t))
 
 
+class _ApiQueryEmbedder:
+    """Embeds a query through the same OpenAI-compatible endpoint that built the
+    index. Shaped like SentenceTransformer.encode so Store does not care which
+    backend it got."""
+
+    def __init__(self, base_url, model, api_key=""):
+        self.url = base_url.rstrip("/") + "/embeddings"
+        self.model = model
+        self.key = api_key
+
+    def encode(self, texts, normalize_embeddings=True, convert_to_numpy=True):
+        headers = {"Content-Type": "application/json"}
+        if self.key:
+            headers["Authorization"] = "Bearer " + self.key
+        req = urllib.request.Request(
+            self.url, data=json.dumps({"model": self.model, "input": list(texts)}).encode(),
+            headers=headers, method="POST")
+        host = (urllib.parse.urlparse(self.url).hostname or "").lower()
+        opener = (urllib.request.build_opener(urllib.request.ProxyHandler({}))
+                  if host in ("localhost", "127.0.0.1", "::1")
+                  else urllib.request.build_opener())
+        with opener.open(req, timeout=120) as r:
+            data = json.loads(r.read().decode("utf-8", "replace"))
+        rows = sorted(data["data"], key=lambda d: d.get("index", 0))
+        out = np.asarray([d["embedding"] for d in rows], dtype="float32")
+        if normalize_embeddings:
+            out /= np.maximum(np.linalg.norm(out, axis=1, keepdims=True), 1e-12)
+        return out
+
+
 class Store:
     def __init__(self, use_reranker=True):
         t0 = time.time()
@@ -49,12 +86,29 @@ class Store:
             raise RuntimeError(
                 f"embeddings ({len(self.vecs)}) != chunks ({len(self.chunks)})")
         meta = json.loads(META_JSON.read_text()) if META_JSON.exists() else {}
-        if meta.get("model") and meta["model"] != DENSE_MODEL:
+        self.meta = meta
+        self.model_name = meta.get("model") or DEFAULT_DENSE_MODEL
+        self.backend = meta.get("backend") or "sentence-transformers"
+        self.query_prefix = meta.get("query_prefix")
+        if self.query_prefix is None:
+            self.query_prefix = (DEFAULT_QUERY_PREFIX
+                                 if self.model_name == DEFAULT_DENSE_MODEL else "")
+        self.normalize = meta.get("normalized", True)
+        if meta.get("dim") and meta["dim"] != self.vecs.shape[1]:
             raise RuntimeError(
-                f"embeddings were built with {meta['model']} but this searchlib "
-                f"expects {DENSE_MODEL} — run `python3 scripts/vectorize.py --rebuild`")
-        from sentence_transformers import SentenceTransformer
-        self.embedder = SentenceTransformer(DENSE_MODEL)
+                f"meta.json says dim {meta['dim']} but embeddings.npy is "
+                f"{self.vecs.shape[1]} wide — rebuild with scripts/vectorize.py")
+        if self.backend == "openai-api":
+            base = (os.environ.get("EMBED_BASE_URL") or meta.get("base_url") or "")
+            if not base:
+                raise RuntimeError(
+                    f"this index was embedded by an API ({self.model_name}); set "
+                    f"EMBED_BASE_URL so queries can be embedded the same way")
+            self.embedder = _ApiQueryEmbedder(
+                base, self.model_name, os.environ.get("EMBED_API_KEY", ""))
+        else:
+            from sentence_transformers import SentenceTransformer
+            self.embedder = SentenceTransformer(self.model_name)
         self.reranker = None
         if use_reranker:
             from sentence_transformers import CrossEncoder
@@ -65,9 +119,15 @@ class Store:
 
     # ---------- channels ----------
     def _dense_scores(self, query):
-        qv = self.embedder.encode([QUERY_PREFIX + query], normalize_embeddings=True,
-                                  convert_to_numpy=True).astype("float32")[0]
-        return self.vecs @ qv
+        qv = np.asarray(
+            self.embedder.encode([self.query_prefix + query],
+                                 normalize_embeddings=self.normalize,
+                                 convert_to_numpy=True),
+            dtype="float32")[0]
+        # embeddings.npy may be float16 to halve a large index on disk; promote
+        # the dot product so the scores stay float32 either way
+        return (self.vecs.astype("float32", copy=False) @ qv
+                if self.vecs.dtype != np.float32 else self.vecs @ qv)
 
     def bm25_rank(self, query, pool=POOL):
         scores = self.bm25.get_scores(tokenize(query))

@@ -426,12 +426,19 @@ def fetch_pdf(url, timeout=90):
 
 
 def pdf_extractor():
-    """Name of the available PDF text extractor, or None."""
+    """Name of the available PDF text extractor, or None.
+
+    Catches everything, not just ImportError: a half-installed extractor can
+    fail its import with anything at all — pypdf against a broken `cryptography`
+    raises pyo3's PanicException, which derives from BaseException and would
+    otherwise escape a probe and take the request down with it. An optional
+    dependency that cannot be imported is simply absent.
+    """
     for name in ("pypdf", "PyPDF2", "pdfminer"):
         try:
             __import__(name)
             return name
-        except ImportError:
+        except BaseException:
             continue
     return None
 

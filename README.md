@@ -318,13 +318,43 @@ Expect a one-time ~30–60 s startup while the store loads.
 - Re-ranking: `BAAI/bge-reranker-base` (cross-encoder)
 - Lexical: BM25 (`rank-bm25`), fused with dense via Reciprocal Rank Fusion
 
-**Other local models.** Change `DENSE_MODEL` / `RERANK_MODEL` in
+**Rebuilding the index.** `scripts/vectorize.py` builds `vector/chunks.jsonl`
+and `vector/embeddings.npy` from a list of decision PDF links, in four resumable
+stages — fetch the PDFs, extract their text, chunk it, embed it:
+
+```bash
+python3 scripts/vectorize.py --links pdf-links-classified.csv \
+        --embedder api --embed-base-url http://localhost:8080/v1 \
+        --embed-model Qwen3-Embedding-8B
+```
+
+`--embedder api` targets any OpenAI-compatible `/v1/embeddings` endpoint, so a
+local server (llama.cpp, vLLM, LM Studio, Ollama, TEI, Infinity) can do the
+embedding; `--embedder local` runs sentence-transformers in-process instead.
+Each stage skips work it has already done, and the embed stage writes into a
+memory-mapped file and records its position, so a run interrupted at chunk
+60,000 of 78,000 resumes there rather than starting over.
+
+The index records what built it — model, backend, vector width, and the
+retrieval prefix that model expects — in `vector/meta.json`, and
+`scripts/searchlib.py` reads that rather than assuming. So a rebuild with a
+different embedding model needs no code change: build it, and search follows.
+For an API-built index, set `EMBED_BASE_URL` (and `EMBED_API_KEY` if the
+endpoint wants one) so queries are embedded the same way the passages were.
+
+Use a model trained for retrieval. A general chat model will emit vectors, but
+they are not trained to put a question near the passage that answers it, and a
+large one costs many hours of forward passes over the ~78k chunks this corpus
+produces. `Qwen3-Embedding-0.6B/4B/8B`, `BAAI/bge-*` and `intfloat/e5-*` are all
+built for it.
+
+**Other local models.** Change `--embed-model`, or `RERANK_MODEL` in
 `scripts/searchlib.py`. For example `BAAI/bge-large-en-v1.5` (stronger, ~330
 MB) or `BAAI/bge-m3` (multilingual) for dense; any `CrossEncoder` model for
-re-ranking. Note the shipped `vector/embeddings.npy` was built with
-bge-base-en-v1.5 (the model is checked against `vector/meta.json` at
-startup) — if you switch the dense model you must regenerate
-`vector/embeddings.npy` with the new model or search quality will be wrong.
+re-ranking. The shipped `vector/embeddings.npy` was built with bge-base-en-v1.5. Switching
+the dense model means regenerating it — `scripts/vectorize.py --stage embed` —
+or search quality will be wrong; the vector width is checked against
+`vector/meta.json` at startup to catch the obvious version of that mistake.
 
 **Cloud API alternatives.** Instead of (or in addition to) the local models,
 the embedder and/or reranker in `scripts/searchlib.py` can call a hosted
@@ -356,6 +386,7 @@ scripts/searchlib.py     hybrid search core (dense + BM25 + RRF + re-rank)
 scripts/analysis.py      decision text sourcing, PDF handling, analysis prompts
 scripts/llm.py           OpenAI-compatible chat client (standard library only)
 scripts/analyze.py       headless CLI: analyze and compare without a browser
+scripts/vectorize.py     builds the search index: fetch, extract, chunk, embed
 scripts/resolve_pdfs.py  one-off: gao.gov landing pages -> direct PDF links
 vector/meta.json         index metadata (model, dimensionality, chunk count)
 data/map.json            decision metadata (B-numbers, gao.gov/PDF links)

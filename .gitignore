@@ -18,3 +18,8 @@ __pycache__/
 # and by the server's "find PDF". Run it with --apply to bake the links into
 # data/mapped-decisions.json and visualization/map.html, which are tracked.
 data/pdf-links.json
+
+# Working files for scripts/vectorize.py: the downloaded decision PDFs and the
+# text extracted from them. ~5,900 PDFs, several GB. The index built from them
+# (vector/chunks.jsonl, vector/embeddings.npy) is ignored above.
+corpus/
