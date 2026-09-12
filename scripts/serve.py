@@ -79,13 +79,22 @@ def load_store():
 STORE, STORE_ERROR = load_store()
 CHUNK_INDEX = analysis.ChunkIndex(STORE.chunks) if STORE else None
 
-MAPMETA = {d["id"].lower(): {"url": d.get("url"), "pdf": d.get("pdf")}
+def _linkmeta(d):
+    """url + pdf, and pdfok when the pdf link was never confirmed, so a search
+    result labels a link exactly the way the Table and the Map popups do."""
+    meta = {"url": d.get("url"), "pdf": d.get("pdf")}
+    if d.get("pdfok") == 0:
+        meta["pdfok"] = 0
+    return meta
+
+
+MAPMETA = {d["id"].lower(): _linkmeta(d)
            for d in json.load(open(os.path.join(ROOT, "data", "map.json")))["decisions"]}
 FACETED = {}
 for d in json.load(open(os.path.join(ROOT, "data", "mapped-decisions.json"))):
     key = d["id"].lower()
     FACETED[key] = d
-    MAPMETA.setdefault(key, {"url": d.get("url"), "pdf": d.get("pdf")})
+    MAPMETA.setdefault(key, _linkmeta(d))
 
 
 def map_ids(file_no):

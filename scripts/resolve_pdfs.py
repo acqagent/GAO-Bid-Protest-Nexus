@@ -40,7 +40,9 @@ stopped. Nothing here needs the rest of the project.
 
 import argparse
 import csv
+from collections import Counter
 import json
+import math
 import os
 import re
 import sys
@@ -104,6 +106,44 @@ def load_decisions(path=None):
     return out
 
 
+def import_csv(path):
+    """Links from a classified CSV: b_number,url,classification.
+
+    A row's b_number may carry several pipe-joined B-numbers — one consolidated
+    document covering all of them — so each member gets the link. Only rows that
+    actually name a .pdf are taken as resolved; a row with no URL, or one
+    pointing at a /products/ page, leaves that decision unresolved so --apply
+    falls back to whatever link it already has and flags it as unconfirmed.
+    """
+    links, skipped = {}, {}
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        rdr = csv.DictReader(f)
+        cols = {c.lower().strip(): c for c in (rdr.fieldnames or [])}
+        idc = next((cols[c] for c in ("b_number", "bnumber", "id") if c in cols), None)
+        urlc = next((cols[c] for c in ("url", "pdf", "link") if c in cols), None)
+        clsc = cols.get("classification")
+        if not idc or not urlc:
+            sys.exit(f"{path}: need a b_number column and a url column, "
+                     f"found {rdr.fieldnames}")
+        for row in rdr:
+            url = (row.get(urlc) or "").strip()
+            cls = (row.get(clsc) or "").strip().lower() if clsc else ""
+            for part in (row.get(idc) or "").split("|"):
+                did = part.strip().lower()
+                if not did:
+                    continue
+                if is_pdf_url(url) and cls in ("", "pdf"):
+                    links[did] = url
+                else:
+                    skipped[did] = cls or "no pdf in the row"
+    print(f"[import] {os.path.basename(path)}: {len(links)} link(s), "
+          f"{len(skipped)} decision(s) the file has no PDF for")
+    if skipped:
+        for why, n in sorted(Counter(skipped.values()).items(), key=lambda kv: -kv[1]):
+            print(f"           {n:5} classified {why}")
+    return links, skipped
+
+
 def is_pdf_url(u):
     return bool(u) and u.lower().split("?")[0].endswith(".pdf")
 
@@ -151,15 +191,31 @@ def is_pdf_at(url, timeout=25):
         return False
 
 
+def _subdir(did):
+    """GAO's older layout nests by B-number band: /assets/330/325381.pdf. The
+    folder is ceil(number/10000)*10 — verified against all 47 such links in the
+    corpus. Missing this form is why a resolver pass can report no-pdf for a
+    decision whose PDF is really there."""
+    m = re.match(r"b-(\d+)$", did)
+    if not m:
+        return None
+    n = int(m.group(1))
+    return f"{ASSET_BASE}{math.ceil(n / 10000) * 10}/{n}.pdf"
+
+
 def candidate_urls(decision_id):
-    """The two spellings worth testing, likeliest first."""
+    """The spellings worth testing, likeliest first."""
     did = decision_id.strip().lower()
     if not did.startswith("b-"):
         return []
     bare, prefixed = ASSET_BASE + did[2:] + ".pdf", ASSET_BASE + did + ".pdf"
     m = re.match(r"b-(\d+)", did)
-    return ([bare, prefixed] if m and int(m.group(1)) >= 410000
-            else [prefixed, bare])
+    out = ([bare, prefixed] if m and int(m.group(1)) >= 410000
+           else [prefixed, bare])
+    nested = _subdir(did)
+    if nested:
+        out.append(nested)
+    return out
 
 
 def scrape_page(page_url, timeout=45):
@@ -183,14 +239,19 @@ def scrape_page(page_url, timeout=45):
 
 # ------------------------------------------------------- free inferences
 
-def infer_dockets(records, links):
+def infer_dockets(records, links, seed_records=True):
     """One document per consolidated docket: every B-number in a filename we
     already know points at that same PDF. Costs nothing, so run it before the
-    fetch and again after — each consolidated name a run finds unlocks more."""
+    fetch and again after — each consolidated name a run finds unlocks more.
+
+    seed_records=False keeps it to links that actually resolved, so an imported
+    set stays the only source of confirmed links and a legacy URL already in the
+    data cannot launder itself into that set through a sibling."""
     known = dict(links)
-    for rec in records:
-        if is_pdf_url(rec.get("pdf")):
-            known.setdefault(rec["id"], rec["pdf"])
+    if seed_records:
+        for rec in records:
+            if is_pdf_url(rec.get("pdf")):
+                known.setdefault(rec["id"], rec["pdf"])
     added = 0
     for url in list(known.values()):
         tail = urllib.parse.unquote(url.rsplit("/", 1)[-1]).lower()[:-4]
@@ -298,19 +359,42 @@ def save(links, rows, args):
             w.writerows(sorted(rows, key=lambda r: r["id"]))
 
 
-def apply_links(links):
-    """Write the links into the corpus data and into the single-file dashboard."""
+def _apply_to(records, links, strict):
+    """pdf <- the resolved link. Outside the resolved set, keep whatever link the
+    record already has but mark it pdfok:0, so the dashboard can label it as a
+    link that was never confirmed to be a PDF rather than promising one."""
+    changed = flagged = 0
+    for rec in records:
+        did = rec["id"].lower()
+        got = links.get(did)
+        if got:
+            if rec.get("pdf") != got:
+                rec["pdf"] = got
+                changed += 1
+            rec.pop("pdfok", None)
+        elif strict:
+            if rec.get("pdfok") != 0:
+                rec["pdfok"] = 0
+                flagged += 1
+        elif not is_pdf_url(rec.get("pdf")):
+            rec["pdfok"] = 0
+    return changed, flagged
+
+
+def apply_links(links, strict=False):
+    """Write the links into the corpus data and into the single-file dashboard.
+
+    strict: treat `links` as the whole truth — every decision outside it is
+    flagged unconfirmed. Use it after importing a complete resolved set.
+    """
     touched = 0
     mapped = os.path.join(ROOT, "data", "mapped-decisions.json")
     if os.path.exists(mapped):
         records = json.loads(open(mapped).read())
-        for rec in records:
-            got = links.get(rec["id"].lower())
-            if got and not is_pdf_url(rec.get("pdf")):
-                rec["pdf"] = got
-                touched += 1
+        touched, flagged = _apply_to(records, links, strict)
         open(mapped, "w").write(json.dumps(records, indent=1) + "\n")
-        print(f"[apply] data/mapped-decisions.json — {touched} link(s) replaced")
+        print(f"[apply] data/mapped-decisions.json — {touched} link(s) written, "
+              f"{flagged} flagged unconfirmed")
 
     html_path = os.path.join(ROOT, "visualization", "map.html")
     if not os.path.exists(html_path):
@@ -322,16 +406,11 @@ def apply_links(links):
               file=sys.stderr)
         return touched
     data = json.loads(m.group(1))
-    inline = 0
-    for rec in data.get("mapped", []):
-        got = links.get(rec["id"].lower())
-        if got and not is_pdf_url(rec.get("pdf")):
-            rec["pdf"] = got
-            inline += 1
+    inline, iflag = _apply_to(data.get("mapped", []), links, strict)
     open(html_path, "w", encoding="utf-8").write(
         html[:m.start(1)] + json.dumps(data, separators=(",", ":")) + html[m.end(1):])
-    print(f"[apply] visualization/map.html — {inline} link(s) replaced "
-          f"(the basic build ships them now)")
+    print(f"[apply] visualization/map.html — {inline} link(s) written, "
+          f"{iflag} flagged (the basic build ships them now)")
     return touched
 
 
@@ -355,6 +434,9 @@ def main():
                     help="do the free passes and report; fetch nothing")
     ap.add_argument("--apply", action="store_true",
                     help="write resolved links into the data and the dashboard")
+    ap.add_argument("--import", dest="import_csv", default="",
+                    help="load links from a classified CSV (b_number,url,"
+                         "classification) instead of fetching; combine with --apply")
     ap.add_argument("--recheck", action="store_true",
                     help="re-verify links already held instead of trusting them")
     ap.add_argument("--only", default="", help="one B-number, for a spot check")
@@ -379,7 +461,13 @@ def main():
         except Exception:
             pass
 
-    seeded = infer_dockets(records, links)
+    strict = False
+    if args.import_csv:
+        imported, _ = import_csv(args.import_csv)
+        links.update(imported)
+        strict = True          # the file is the whole truth about what resolved
+
+    seeded = infer_dockets(records, links, seed_records=not strict)
     if seeded:
         print(f"[docket] {seeded} link(s) inferred from consolidated filenames")
 
@@ -390,9 +478,9 @@ def main():
           f"· {len(links)} known links · {pending} to fetch")
 
     rows = []
-    if not args.dry_run:
+    if not args.dry_run and not args.import_csv:
         run(records, links, rows, args)
-        more = infer_dockets(records, links)
+        more = infer_dockets(records, links, seed_records=not strict)
         if more:
             print(f"[docket] {more} more inferred from filenames this run turned up")
         save(links, rows, args)
@@ -400,7 +488,7 @@ def main():
               + (f" · audit → {args.csv}" if args.csv else ""))
 
     if args.apply:
-        apply_links(links)
+        apply_links(links, strict=strict)
     report(records, links)
     if not args.apply and not args.dry_run:
         print("[next] python3 scripts/resolve_pdfs.py --apply")

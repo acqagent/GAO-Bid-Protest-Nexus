@@ -225,13 +225,33 @@ the decision" rather than guess, and to flag their own gaps.
 
 ## Decision PDF links
 
-The corpus carries a direct `gao.gov/assets/....pdf` link for some decisions and
-only a `gao.gov/products/` landing page for the rest. The dashboard labels the
-two apart rather than calling both "PDF", so a link never lands somewhere you
-did not expect.
+**5,921 of 5,986 decisions link straight to their PDF.** The dashboard shows
+one of three labels, so a link never promises more than it is:
 
-To turn the landing pages into direct PDF links for good — which the basic
-build ships with, since the data is embedded in `map.html`:
+| Label | Count | Meaning |
+|---|---|---|
+| `PDF ↗` | 5,921 | a resolver pass fetched this URL and got a PDF back |
+| `PDF ↗?` (amber, dotted) | 51 | a `.pdf` URL the corpus carries that no run has confirmed |
+| `no PDF; text on that page` | 14 | GAO publishes no PDF; the text is on the gao.gov page |
+
+The 51 use GAO's older nested layout, `/assets/330/325381.pdf`, whose folder is
+`ceil(number/10000)*10`. That form is now one of the candidates the resolver
+tests, so a rerun should confirm them.
+
+To resolve links yourself, or to import a set someone else resolved — either
+way the basic build ships them, since the data is embedded in `map.html`:
+
+```bash
+# import an already-resolved set: b_number,url,classification
+# (b_number may hold several pipe-joined B-numbers for one consolidated docket)
+python3 scripts/resolve_pdfs.py --import links.csv --apply
+```
+
+Under `--import` the file is treated as the whole truth: any decision it has no
+PDF for keeps whatever link it already had and is flagged unconfirmed rather
+than quietly presented as a PDF.
+
+To resolve from scratch instead:
 
 ```bash
 python3 scripts/resolve_pdfs.py --dry-run   # count the work, fetch nothing
@@ -247,13 +267,14 @@ url, which method found it, status) and `--recheck` re-verifies links already
 held rather than trusting them. Ctrl-C is safe; a rerun continues where it
 stopped.
 
-**How it resolves.** gao.gov files a decision's PDF under one of two spellings,
-`/assets/b-417327.pdf` or `/assets/417327.pdf`, and the record does not say
-which. Of the links the corpus already has, 82% are one of the two, and the
-B-number predicts the order to try (the bare form dominates from B-420000 up).
-So each decision costs one or two `HEAD` requests, and only the ~18% that are
-consolidated dockets fall back to fetching and parsing the landing page. A link
-is written only when gao.gov confirms the file is there — nothing is guessed.
+**How it resolves.** gao.gov files a decision's PDF under one of three
+spellings and the record does not say which: `/assets/b-417327.pdf`,
+`/assets/417327.pdf`, or the older nested `/assets/330/325381.pdf`. The
+B-number predicts the order to try — the bare form dominates from B-420000 up,
+the `b-` form below B-300000, the nested form in the oldest decisions — so most
+cost a single `HEAD`. Only consolidated dockets, whose filenames carry several
+B-numbers, fall back to fetching and parsing the landing page. A link is written
+only when gao.gov confirms the file is there — nothing is guessed.
 
 Four workers 0.4s apart by default — be kind, gao.gov is a public service.
 While the dashboard server is running, its **find PDF** link does the same
@@ -266,8 +287,8 @@ asset filename names every B-number it covers
 that same PDF. It runs again after fetching, because every consolidated filename
 a run discovers unlocks its siblings too.
 
-Current state in this repo: **1,926 of 5,986** decisions carry a direct PDF
-link. The remaining 4,060 show as landing pages until the script is run.
+Reruns are cheap and idempotent: `--recheck` re-verifies links already held
+rather than trusting them.
 
 ## Minimum hardware requirements
 

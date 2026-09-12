@@ -15,6 +15,7 @@ Only the transport lives in llm.py; everything domain-shaped is here.
 """
 
 import json
+import math
 import os
 import re
 import threading
@@ -321,14 +322,19 @@ ASSET_BASE = "https://www.gao.gov/assets/"
 
 
 def candidate_pdf_urls(decision_id):
-    """The two URLs worth testing for a decision, likeliest first."""
+    """The URLs worth testing for a decision, likeliest first. The third is
+    GAO's older nested layout, /assets/330/325381.pdf, whose folder is
+    ceil(number/10000)*10 — verified against all 47 such links in the corpus."""
     did = (decision_id or "").strip().lower()
     if not did.startswith("b-"):
         return []
     bare, prefixed = ASSET_BASE + did[2:] + ".pdf", ASSET_BASE + did + ".pdf"
     m = re.match(r"b-(\d+)", did)
     n = int(m.group(1)) if m else 0
-    return [bare, prefixed] if n >= 410000 else [prefixed, bare]
+    out = [bare, prefixed] if n >= 410000 else [prefixed, bare]
+    if re.match(r"b-\d+$", did):
+        out.append(f"{ASSET_BASE}{math.ceil(n / 10000) * 10}/{n}.pdf")
+    return out
 
 
 def is_pdf_at(url, timeout=20):
