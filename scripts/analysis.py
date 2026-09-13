@@ -32,6 +32,11 @@ PDF_LINKS = ROOT / "data" / "pdf-links.json"
 # A GAO decision runs ~5-40 pages. The cap is a backstop against a pathological
 # consolidated record, not a normal-path truncation.
 MAX_TEXT_CHARS = int(os.environ.get("ANALYZE_MAX_CHARS", "180000"))
+# A reasoning endpoint bills its thinking against the same completion budget, so
+# a long decision can spend the whole default before it writes a first word and
+# answer with an empty string. Raise these for such a model.
+MAX_ANALYZE_TOKENS = int(os.environ.get("ANALYZE_MAX_TOKENS", "2600"))
+MAX_COMPARE_TOKENS = int(os.environ.get("COMPARE_MAX_TOKENS", "3200"))
 MAX_PDF_BYTES = int(os.environ.get("ANALYZE_MAX_PDF_BYTES", str(40 * 1024 * 1024)))
 # Fetching an arbitrary URL on the user's behalf is a wider door than this tool
 # needs; the corpus only ever points at gao.gov.
@@ -537,7 +542,8 @@ def resolve_text(*, decision_id=None, supplied_text=None, pdf_url=None,
 
 
 def analyze(text, meta=None, *, base_url=None, api_key=None, model=None,
-            stream=False, max_tokens=2600):
+            stream=False, max_tokens=None):
+    max_tokens = max_tokens or MAX_ANALYZE_TOKENS
     messages = build_messages(text, meta)
     if stream:
         return llm.stream(messages, base_url=base_url, api_key=api_key,
@@ -658,7 +664,8 @@ def build_compare_messages(items, question=None):
 
 
 def compare(items, *, question=None, base_url=None, api_key=None, model=None,
-            stream=False, max_tokens=3200):
+            stream=False, max_tokens=None):
+    max_tokens = max_tokens or MAX_COMPARE_TOKENS
     messages = build_compare_messages(items, question)
     if stream:
         return llm.stream(messages, base_url=base_url, api_key=api_key,
