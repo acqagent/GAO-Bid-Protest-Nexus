@@ -202,7 +202,9 @@ def main():
     ap.add_argument("--model", default="", help="overrides OPENAI_MODEL")
     ap.add_argument("--api-key", default="", help="overrides OPENAI_API_KEY")
     ap.add_argument("--workers", type=int, default=2, help="decisions at a time (2)")
-    ap.add_argument("--max-tokens", type=int, default=2600)
+    ap.add_argument("--max-tokens", type=int, default=None,
+                    help="completion budget per decision; overrides "
+                         "ANALYZE_MAX_TOKENS (2600)")
     ap.add_argument("--dry-run", action="store_true",
                     help="report the plan and the text source, call no model")
     args = ap.parse_args()
@@ -283,7 +285,8 @@ def main():
                                        base_url=args.base_url or None,
                                        model=args.model or None,
                                        api_key=args.api_key or None,
-                                       max_tokens=max(args.max_tokens, 3200))
+                                       max_tokens=(max(args.max_tokens, 3200)
+                                                   if args.max_tokens else None))
                 comparison = res["text"]
                 p = write_out(args, "comparison.md", comparison)
                 print(f"  {'comparison':16} {len(items)} decisions"
