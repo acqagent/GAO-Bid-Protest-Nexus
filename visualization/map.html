@@ -1338,13 +1338,31 @@ function renderRes(r){
   const links = (r.links && r.links.length)
     ? r.links.map(l => linksHTML(l, false, "ext") + pickHTML(l.id) + anBtnHTML(l.id, true)).join("")
     : `<span class="mut">text citation (no gao.gov link)</span>`;
-  const pg = r.pages[0]===r.pages[1] ? `p.${r.pages[0]}` : `pp.${r.pages[0]}-${r.pages[1]}`;
+  const pg = (Array.isArray(r.pages) && r.pages[0]!=null)
+    ? (r.pages[0]===r.pages[1] ? `p.${r.pages[0]}` : `pp.${r.pages[0]}-${r.pages[1]}`)
+    : "";
   const dig = r.isDigest ? `<span class="digg">digest</span>` : "";
+  const sec = (r.section && r.section!=="body" && r.section!=="decision")
+    ? `<span class="digg">${esc(r.section)}</span>` : "";
+  const ch = (r.chunk!=null && r.n_chunks)
+    ? `<span class="digg">passage ${r.chunk+1}/${r.n_chunks}</span>` : "";
   return `<div class="res">
-    <div class="resh">${dig}<span class="resf">${esc(r.file)} · ${pg}${r.date?" · "+esc(r.date):""} · ${r.score}</span></div>
+    <div class="resh">${dig}${sec}${ch}<span class="resf">${esc(r.file)}${pg?" · "+pg:""}${r.date?" · "+esc(r.date):""} · ${r.score}</span></div>
     <div class="reslinks">${links}</div>
     <div class="restext clamped" data-full="${encodeURIComponent(r.text)}"></div>
   </div>`;
+}
+
+// Decision-level summary strip above the passages: which decisions matched,
+// in rank order, with case name / date where the index carries them.
+function renderDecisions(j){
+  if(!j.decisions || !j.decisions.length) return "";
+  return `<div class="mut" style="margin-bottom:6px">Decisions: ${
+    j.decisions.map(d=>`<span class="fchip" style="margin:1px 3px 1px 0">${
+      esc(d.file)}${d.case?` · ${esc(d.case)}`:""}${d.date?` · ${esc(d.date)}`:""}${
+      d.outcome?` · ${esc(d.outcome)}`:""}${
+      d.n_chunks>1?` (${d.n_chunks} passages)`:""}</span>`).join("")
+  }</div>`;
 }
 
 function wireRes(bot){
@@ -1381,7 +1399,8 @@ async function runSearch(){
     if(!j.results.length){
       box.innerHTML = "<span class='mut'>No matching passages found. Try different wording.</span>";
     }else{
-      box.innerHTML = `<div class="mut" style="margin-bottom:6px">${j.results.length} relevant passage(s):</div>`
+      box.innerHTML = renderDecisions(j)
+        + `<div class="mut" style="margin-bottom:6px">${j.results.length} relevant passage(s):</div>`
         + j.results.map(renderRes).join("");
       wireRes(bot);
     }
