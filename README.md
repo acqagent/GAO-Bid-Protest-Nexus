@@ -73,13 +73,14 @@ all (Analysis needs a model endpoint, and asks you for the decision).
 
 ## Downloads
 
-- **Basic** (`gao-bid-protest-nexus-basic.zip`, ~1.8 MB) — just
-  `visualization/map.html`. Unzip and open the file in any browser: you get
-  the Map and Table tabs (all filters, the 3D map with all 33,136 decisions,
-  the full decision table). No Python, no server, no models — fully offline.
-  The **Analysis** tab works here too, once you point it at a model endpoint
-  and hand it the decision — see
-  [Decision analysis](#decision-analysis).
+- **Basic** (`gao-bid-protest-nexus-basic.zip`, ~1.8 MB) —
+  `visualization/map.html` plus the license files (`LICENSE`, `LICENSE-DATA`,
+  `LICENSE-CORPUS-MIT`, `NOTICE`). Unzip and open the HTML file in any
+  browser: you get the Map, Table, Ground detail and License tabs (all
+  filters, the 3D map with all 33,136 decisions, the full decision table). No
+  Python, no server, no models — fully offline. The **Analysis** tab works
+  here too, once you point it at a model endpoint and hand it the decision —
+  see [Decision analysis](#decision-analysis).
   **Download from the [Releases page](../../releases/latest).**
 - **Full** (`gao-bid-protest-nexus-full.zip`, ~250 MB) — everything in the
   basic zip plus the Dynamic Search backend (server scripts, the
