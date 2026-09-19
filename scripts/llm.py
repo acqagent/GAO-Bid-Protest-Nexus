@@ -42,6 +42,10 @@ DEFAULT_BASE_URL = (os.environ.get("OPENAI_BASE_URL")
 DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 DEFAULT_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 TIMEOUT = int(os.environ.get("OPENAI_TIMEOUT", "300"))
+# A reasoning model bills thinking against max_tokens and can spend the whole
+# budget before writing a word, answering with an empty string. Capping the
+# effort is what fixes that; raising max_tokens alone does not.
+DEFAULT_REASONING_EFFORT = os.environ.get("OPENAI_REASONING_EFFORT", "")
 
 
 class LLMError(RuntimeError):
@@ -98,6 +102,8 @@ def _payload(messages, model, temperature, max_tokens, stream, extra):
         p["temperature"] = temperature
     if max_tokens:
         p["max_tokens"] = max_tokens
+    if DEFAULT_REASONING_EFFORT:
+        p["reasoning_effort"] = DEFAULT_REASONING_EFFORT
     if extra:
         p.update(extra)
     return p
@@ -117,6 +123,9 @@ def _adapt(payload, message):
         return True
     if "response_format" in m and "response_format" in payload:
         payload.pop("response_format")
+        return True
+    if "reasoning_effort" in m and "reasoning_effort" in payload:
+        payload.pop("reasoning_effort")
         return True
     return False
 

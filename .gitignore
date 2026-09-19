@@ -10,7 +10,9 @@ vector/chunks.jsonl
 vector/embeddings.npy
 
 # Python
-.venv/
+# No trailing slash: a venv is often a symlink to one kept outside the tree,
+# and `.venv/` matches only a real directory.
+.venv
 __pycache__/
 *.pyc
 

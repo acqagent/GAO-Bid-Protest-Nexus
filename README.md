@@ -185,6 +185,28 @@ never reaches the browser; typed keys are kept in that browser's `localStorage`
 only. Without the server the page calls the endpoint directly, so the endpoint
 must send CORS headers.
 
+**Using a reasoning model.** o-series, DeepSeek-R1, Qwen3 and friends bill their
+thinking against the same completion budget as the answer, and a GAO decision is
+a long prompt. Left alone, such a model can spend the entire budget reasoning and
+return **an empty analysis** — the tab renders nothing and the failure is silent.
+Raising the ceiling does not fix it; the model simply thinks longer and then
+outruns the timeout. Cap the effort instead:
+
+```bash
+export OPENAI_REASONING_EFFORT=low   # sent as reasoning_effort; the actual fix
+export ANALYZE_MAX_TOKENS=8000       # per decision   (default 2600)
+export COMPARE_MAX_TOKENS=10000      # per comparison (default 3200)
+export OPENAI_TIMEOUT=1800           # seconds; a local 27B streams for minutes
+```
+
+All four are read by the server and by `scripts/analyze.py` (whose
+`--max-tokens` overrides the budget for one run). When an endpoint rejects
+`reasoning_effort` with a 400 that names the parameter, the client drops it and
+retries, so leaving the variable set is usually safe across providers. If an
+analysis comes back blank, check `finish_reason` — `length`, with the whole
+budget spent on reasoning tokens and the prose sitting in `reasoning_content`,
+is this problem.
+
 **What leaves your machine.** The decision text and your question go to
 whichever endpoint you configure. The decisions are public record, but review
 that against your own rules — and note that a local endpoint (LM Studio, Ollama,
@@ -198,6 +220,7 @@ and no display — over SSH, in cron, in CI, in a container:
 ```bash
 export OPENAI_BASE_URL=http://localhost:1234/v1   # LM Studio, Ollama, vLLM...
 export OPENAI_MODEL=your-local-model
+export OPENAI_REASONING_EFFORT=low                # if it is a reasoning model
 
 python3 scripts/analyze.py B-417327                       # one, to stdout
 python3 scripts/analyze.py --ids-file ids.txt --out reports/
