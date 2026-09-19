@@ -42,22 +42,18 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "visualization", "map.html")
-MODES = {
-    "static": {
-        "flag": "STATIC_BUILD",
-        "out": "map-static.html",
-        "tabs": "Map, Table, Ground detail, License",
-        "note": "dropped: Dynamic Search (needs the vector index), "
-                "Analysis (needs a model endpoint)",
-    },
-    "web": {
-        "flag": "WEB_BUILD",
-        "out": "map-web.html",
-        "tabs": "Map, Table, Dynamic Search, Ground detail, Analysis, License",
-        "note": "all six kept; the two backend tabs explain themselves and the "
-                "/api/config probe is off",
-    },
+SWITCHES = {
+    "static": ("STATIC_BUILD",
+               "drops Dynamic Search and Analysis, and their markup with them"),
+    "web":    ("WEB_BUILD",
+               "no /api/config probe, and the backend tabs explain themselves "
+               "to a visitor instead of naming a server they cannot start"),
+    "connect": ("SETUP_GUIDE",
+                "adds a Setup tab: how to point the dashboard at an "
+                "OpenAI-compatible endpoint and turn on every feature"),
 }
+DEFAULT_OUT = {"static": "map-static.html", "web": "map-web.html",
+               "connect": "map-connect.html"}
 
 
 def main():
@@ -65,23 +61,29 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--src", default=SRC, help="the full dashboard to build from")
     ap.add_argument("--out", default="", help="where to write it (defaults per mode)")
-    ap.add_argument("--web", action="store_true",
-                    help="keep all six tabs; suppress the backend probe and reword "
-                         "the two tabs that need one")
+    for name, (_, help_text) in SWITCHES.items():
+        ap.add_argument(f"--{name}", action="store_true", help=help_text)
     args = ap.parse_args()
 
-    mode = MODES["web" if args.web else "static"]
-    out_path = args.out or os.path.join(ROOT, "visualization", mode["out"])
-    flag = re.compile(rf"^const {mode['flag']} = (true|false);$", re.M)
+    on = [k for k in SWITCHES if getattr(args, k)] or ["static"]
+    if "static" in on and len(on) > 1:
+        sys.exit("--static drops the tabs the other modes are about; pick one or the other")
+    # name the file after the most specific switch asked for, so
+    # "--connect --web" does not quietly overwrite the plain web build
+    named = next(k for k in ("connect", "web", "static") if k in on)
+    out_path = args.out or os.path.join(ROOT, "visualization", DEFAULT_OUT[named])
 
-    html = open(args.src, encoding="utf-8").read()
-    hits = flag.findall(html)
-    if len(hits) != 1:
-        sys.exit(f"{args.src}: expected exactly one {mode['flag']} line, found "
-                 f"{len(hits)}. Has the switch been renamed?")
-    if hits[0] == "true":
-        sys.exit(f"{args.src} already has {mode['flag']} on — build from the full dashboard")
-    out = flag.sub(f"const {mode['flag']} = true;", html, count=1)
+    out = open(args.src, encoding="utf-8").read()
+    for name in on:
+        flag_name = SWITCHES[name][0]
+        flag = re.compile(rf"^const {flag_name} = (true|false);$", re.M)
+        hits = flag.findall(out)
+        if len(hits) != 1:
+            sys.exit(f"{args.src}: expected exactly one {flag_name} line, found "
+                     f"{len(hits)}. Has the switch been renamed?")
+        if hits[0] == "true":
+            sys.exit(f"{args.src} already has {flag_name} on — build from the full dashboard")
+        out = flag.sub(f"const {flag_name} = true;", out, count=1)
 
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
@@ -89,10 +91,11 @@ def main():
 
     raw = len(out.encode())
     gz = len(gzip.compress(out.encode(), 9))
-    print(f"[build] {os.path.relpath(out_path, ROOT)}  ({mode['flag']} on)")
+    print(f"[build] {os.path.relpath(out_path, ROOT)}  "
+          f"({', '.join(SWITCHES[k][0] for k in on)} on)")
     print(f"        {raw / 1048576:.1f} MB raw · {gz / 1048576:.1f} MB gzipped")
-    print(f"        tabs: {mode['tabs']}")
-    print(f"        {mode['note']}")
+    for k in on:
+        print(f"        --{k}: {SWITCHES[k][1]}")
     print("[serve] upload it as index.html; it needs nothing but a file server.")
     print("        Turn on gzip or brotli — it is mostly embedded JSON and "
           "compresses about 10:1.")

@@ -10,9 +10,12 @@
   The embedded decision data, taxonomy, and coding are licensed under
   CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
 
-  Built on the GAO-Bid-Protest-Dataset by Kevin Misener. The underlying
-  GAO decisions are works of the U.S. federal government and are in the
-  public domain (17 U.S.C. 105).
+  Built on the GAO bid protest corpora by Kevin Misener:
+  https://huggingface.co/datasets/Kmisener/GAO-Bid-Protest  (MIT)
+  https://github.com/kmisener90/GAO-Bid-Protest-Dataset     (CC BY)
+
+  The underlying GAO decisions are works of the U.S. federal government and
+  are in the public domain (17 U.S.C. 105).
 -->
 <head>
 <meta charset="utf-8"/>
@@ -228,7 +231,20 @@ h1 small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-to
 .lic .note b{color:#ffd79a}
 .lic ul{font-size:13.5px;line-height:1.7;color:#dbe3ee;padding-left:20px;max-width:78ch}
 .lic li{margin:6px 0}
-@media (max-width:700px){#licview{padding:16px 12px 40px 12px}}
+#setupview{position:absolute;inset:0;overflow:auto;padding:22px 26px 48px 66px}
+#tab-setup.on{background:#233042;color:var(--ink);border-color:#3a4b63}
+.lic .step{counter-increment:step;position:relative;padding-left:34px;margin:18px 0}
+.lic .step::before{content:counter(step);position:absolute;left:0;top:-1px;width:23px;height:23px;
+  border-radius:50%;background:linear-gradient(135deg,var(--an1),var(--an2));color:var(--anink);
+  font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.lic .steps{counter-reset:step}
+.lic .step h4{margin:0 0 5px;font-size:14px;color:var(--ink)}
+.lic code,.lic kbd{background:#0b0e13;border:1px solid var(--line);border-radius:4px;
+  padding:1px 5px;font-size:12px;font-family:ui-monospace,monospace;color:#cdd6e3}
+.lic pre{background:#0b0e13;border:1px solid var(--line);border-radius:9px;padding:12px 14px;
+  overflow-x:auto;font-size:12.5px;line-height:1.65;color:#cdd6e3;margin:9px 0}
+.lic pre code{background:none;border:none;padding:0;font-size:inherit}
+@media (max-width:700px){#licview,#setupview{padding:16px 12px 40px 12px}}
 /* ---- decision analysis ---- */
 :root{--an1:#ffb648;--an2:#ff8a3d;--anink:#2a1803;--anglow:rgba(255,150,60,.30)}
 /* The one loud control in a deliberately quiet UI: analysis costs money and
@@ -411,6 +427,7 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
       <button id="tab-chat">Dynamic Search</button>
       <button id="tab-ground">Ground detail</button>
       <button id="tab-an" title="Summarize and compare selected decisions with a language model">Analysis<span class="cnt">0</span></button>
+      <button id="tab-setup" title="How to connect a model endpoint and turn on every feature">Setup</button>
       <button id="tab-lic" title="Licensing, attribution and credits">License</button>
     </div>
       <div id="credit">
@@ -418,7 +435,8 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
           (<a href="https://acqagent.ai" target="_blank" rel="noopener">AcqAgent</a>)</div>
         <div class="row">Code <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">Apache&nbsp;2.0</a>
           &middot; data <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC&nbsp;BY&nbsp;4.0</a></div>
-        <div class="row">Corpus by <a href="https://github.com/kmisener90/GAO-Bid-Protest-Dataset" target="_blank" rel="noopener">Kevin&nbsp;Misener</a>
+        <div class="row">Corpus by <a href="https://huggingface.co/datasets/Kmisener/GAO-Bid-Protest" target="_blank" rel="noopener">Kevin&nbsp;Misener</a>
+          (<a href="https://huggingface.co/datasets/Kmisener/GAO-Bid-Protest" target="_blank" rel="noopener">MIT</a>)
           &middot; decisions public domain (GAO)</div>
         <div class="warn">Coding is AI-derived and unverified. <b>Not legal advice</b> &mdash;
           check anything you rely on against the original decision.</div>
@@ -532,6 +550,112 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
       <button id="traycompare" class="abtn sm">Compare</button>
       <button id="trayclear" class="pick2">Clear</button>
     </div>
+    <div id="setupview" class="hidden">
+      <div class="lic">
+        <h2>Connect a model endpoint</h2>
+        <p class="lede">Map, Table and Ground detail work with nothing attached. Analysis needs
+        a model; Dynamic Search needs the search index. Both are optional, and both are yours to
+        point wherever you like — including at a model running on your own machine.</p>
+
+        <h3>What each tab needs</h3>
+        <table>
+          <thead><tr><th>Tab</th><th>Needs</th></tr></thead>
+          <tbody>
+            <tr><td>Map, Table, Ground detail, License</td><td>Nothing. They are already working.</td></tr>
+            <tr><td>Analysis</td><td>Any OpenAI-compatible endpoint — hosted or local</td></tr>
+            <tr><td>Dynamic Search</td><td>The vector index plus <code>scripts/serve.py</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>The quick way: point the browser at an endpoint</h3>
+        <p>Nothing to install. The page calls the endpoint directly from your browser.</p>
+        <div class="steps">
+          <div class="step"><h4>Open the Analysis tab</h4>
+            <p>Click <b>Analysis</b>, then expand <b>Model endpoint</b> at the top.</p></div>
+          <div class="step"><h4>Fill in three fields</h4>
+            <p><b>Base URL</b> — ends in <code>/v1</code>, for example
+            <code>https://api.openai.com/v1</code> or <code>http://localhost:1234/v1</code>.<br/>
+            <b>Model</b> — the name your endpoint answers to.<br/>
+            <b>API key</b> — leave empty for most local servers.</p></div>
+          <div class="step"><h4>Pick a decision and run it</h4>
+            <p>Use <b>Select</b> on any decision in the Table or a Map popup, then
+            <b>✦ Run analysis</b>. Choose <b>Compare as a set</b> for two or more.</p></div>
+          <div class="step"><h4>Give it the decision text</h4>
+            <p>Without the local server there is no decision text on this page, so it will ask
+            you to drop the PDF in or paste the text. That is expected.</p></div>
+        </div>
+        <div class="note"><b>Two things to know.</b> Your key is kept in this browser's local
+        storage and is never sent anywhere but the endpoint you name. And the endpoint has to
+        allow browser requests (CORS) — most hosted providers and local servers do; if one does
+        not, use the server route below.</div>
+
+        <h3>Endpoints that work</h3>
+        <table>
+          <thead><tr><th>Running locally</th><th>Base URL</th></tr></thead>
+          <tbody>
+            <tr><td>LM Studio</td><td><code>http://localhost:1234/v1</code></td></tr>
+            <tr><td>Ollama</td><td><code>http://localhost:11434/v1</code></td></tr>
+            <tr><td>llama.cpp server</td><td><code>http://localhost:8080/v1</code></td></tr>
+            <tr><td>vLLM</td><td><code>http://localhost:8000/v1</code></td></tr>
+          </tbody>
+        </table>
+        <p>Hosted providers work the same way — OpenAI, OpenRouter, Together, Groq, Fireworks,
+        LiteLLM and anything else speaking <code>/v1/chat/completions</code>. Only the base URL,
+        the model name and the key change.</p>
+
+        <h3>The tidier way: let the server hold the key</h3>
+        <p>Run the project's own server and your key lives in its environment instead of in a
+        browser. The server also reads the decision text for you, so you are not asked for PDFs,
+        and it is the only way to turn on Dynamic Search.</p>
+        <pre><code>git clone https://github.com/acqagent/GAO-Bid-Protest-Nexus.git
+cd GAO-Bid-Protest-Nexus
+python -m venv .venv &amp;&amp; .venv/bin/pip install -r requirements.txt
+
+export OPENAI_BASE_URL=http://localhost:1234/v1   # or any compatible endpoint
+export OPENAI_MODEL=your-model
+export OPENAI_API_KEY=sk-...                      # omit for a local server
+
+.venv/bin/python scripts/serve.py
+# then open http://127.0.0.1:8765/</code></pre>
+        <p>The dashboard notices the server on its own and routes through it. The Model endpoint
+        panel will say <i>key on the server</i> when it has one.</p>
+
+        <h3>Turning on Dynamic Search</h3>
+        <p>Full-text search runs over a vector index of the decision text, which is far too large
+        to ship inside this page. Either drop <code>vector/chunks.jsonl</code> and
+        <code>vector/embeddings.npy</code> from the full bundle into <code>vector/</code>, or
+        build the index yourself:</p>
+        <pre><code>python3 scripts/vectorize.py --links pdf-links.csv \
+        --embedder api --embed-base-url http://localhost:8080/v1 \
+        --embed-model your-embedding-model</code></pre>
+        <p>Use a model trained for retrieval — <code>Qwen3-Embedding</code>,
+        <code>BAAI/bge-*</code> or <code>intfloat/e5-*</code>. A general chat model will produce
+        vectors, but not ones that put a question near the passage answering it.</p>
+
+        <h3>No browser at all</h3>
+        <p>Every analysis the dashboard can run is also a command:</p>
+        <pre><code>python3 scripts/analyze.py B-417327 --out reports/
+python3 scripts/analyze.py --filter ground=oci,disposition=sustained \
+        --limit 8 --compare --out reports/</code></pre>
+
+        <h3>When it does not work</h3>
+        <table>
+          <thead><tr><th>What you see</th><th>Usually means</th></tr></thead>
+          <tbody>
+            <tr><td>"could not reach … CORS"</td><td>The endpoint refuses browser requests. Use the server route.</td></tr>
+            <tr><td><code>401</code> or <code>403</code></td><td>Missing or wrong API key.</td></tr>
+            <tr><td><code>404</code> on the model</td><td>Model name does not match what the endpoint serves.</td></tr>
+            <tr><td>"could not get the decision text"</td><td>No local corpus and no PDF reachable — drop the PDF in or paste the text.</td></tr>
+            <tr><td>Search says it is unavailable</td><td>The vector index is not loaded. See above.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="note" style="margin-top:24px"><b>What leaves your machine.</b> The decision
+        text and your question go to whichever endpoint you configure, and nowhere else. The
+        decisions are public record, but check that against your own rules — and note that a
+        local endpoint keeps everything in-house.</div>
+      </div>
+    </div>
     <div id="licview" class="hidden">
       <div class="lic">
         <h2>License and credits</h2>
@@ -545,6 +669,9 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
                 <td><a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">Apache&nbsp;2.0</a></td></tr>
             <tr><td>Protest taxonomy, per-decision coding, decision metadata, vector index</td>
                 <td><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC&nbsp;BY&nbsp;4.0</a></td></tr>
+            <tr><td>The upstream decision corpus (Kevin Misener)</td>
+                <td><a href="https://huggingface.co/datasets/Kmisener/GAO-Bid-Protest" target="_blank" rel="noopener">MIT</a>
+                    / <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC&nbsp;BY</a>, per source</td></tr>
             <tr><td>The GAO decisions themselves</td>
                 <td>Public domain (17&nbsp;U.S.C.&nbsp;105)</td></tr>
           </tbody>
@@ -557,9 +684,10 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
         <div class="cite">
           <button id="citecopy" type="button">Copy</button>
           <span id="citetext">GAO Bid Protest Nexus, by Tommy Kim (AcqAgent, https://acqagent.ai),
-          licensed under CC BY 4.0. Built on the GAO-Bid-Protest-Dataset by Kevin Misener
-          (https://github.com/kmisener90/GAO-Bid-Protest-Dataset). Underlying decisions are works
-          of the U.S. Government Accountability Office and are in the public domain.</span>
+          licensed under CC BY 4.0. Built on the GAO bid protest corpora by Kevin Misener
+          (https://huggingface.co/datasets/Kmisener/GAO-Bid-Protest, MIT;
+          https://github.com/kmisener90/GAO-Bid-Protest-Dataset, CC BY). Underlying decisions are
+          works of the U.S. Government Accountability Office and are in the public domain.</span>
         </div>
         <p>If you modified the data, say so &mdash; for example, &ldquo;Coding modified from the
         original.&rdquo;</p>
@@ -568,12 +696,15 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
         <p>The Nexus is built on someone else&rsquo;s work, and the corpus came first.</p>
         <ul>
           <li><b>The decision corpus</b> came from
-            <a href="https://github.com/kmisener90" target="_blank" rel="noopener">Kevin Misener</a>, whose
+            <a href="https://github.com/kmisener90" target="_blank" rel="noopener">Kevin Misener</a>,
+            in two collections:
+            <a href="https://huggingface.co/datasets/Kmisener/GAO-Bid-Protest" target="_blank" rel="noopener">GAO-Bid-Protest</a>
+            on Hugging Face — the larger corpus, under the <b>MIT License</b> — and the earlier
             <a href="https://github.com/kmisener90/GAO-Bid-Protest-Dataset" target="_blank" rel="noopener">GAO-Bid-Protest-Dataset</a>
-            assembled roughly 5,700 GAO bid protest decisions and is released under a Creative
-            Commons Attribution license. The PDF URLs, the 33-ground taxonomy and the
-            per-decision coding were derived from that corpus using AI. If you reuse the corpus,
-            credit that source too.</li>
+            of roughly 5,700 decisions, under a Creative Commons Attribution license. Both are
+            used the same way here: the PDF URLs, the 33-ground taxonomy and the per-decision
+            coding were derived from them using AI. If you reuse the corpus, credit that source
+            too.</li>
           <li><b>The decisions themselves</b> are works of the U.S. federal government and are not
             protected by U.S. copyright (17 U.S.C. 105), so they are in the public domain. Cite
             GAO as the source.</li>
@@ -645,6 +776,12 @@ const STATIC_BUILD = false;
           "start the server" copy for something a visitor can act on.
    scripts/build_static.py --web flips this line. */
 const WEB_BUILD = false;
+
+/* SETUP_GUIDE ---------------------------------------------------------------
+   true adds a Setup tab: what each feature needs, and step by step how to point
+   the dashboard at an OpenAI-compatible endpoint so Analysis works.
+   scripts/build_static.py --connect flips this line. */
+const SETUP_GUIDE = false;
 
 const GROUNDS = DATA.grounds;
 const MAPPED = DATA.decisions;                    // the full 33,136-decision corpus
@@ -1583,8 +1720,9 @@ function refresh(){
   if(curTab==="table") renderTable(lastList);
 }
  
-const ALL_TABS  = {map:"tab-map", table:"tab-table", chat:"tab-chat", ground:"tab-ground", an:"tab-an", lic:"tab-lic"};
-const ALL_VIEWS = {map:"mapview", table:"tableview", chat:"chatview", ground:"groundview", an:"anview", lic:"licview"};
+const ALL_TABS  = {map:"tab-map", table:"tab-table", chat:"tab-chat", ground:"tab-ground", an:"tab-an", setup:"tab-setup", lic:"tab-lic"};
+const ALL_VIEWS = {map:"mapview", table:"tableview", chat:"chatview", ground:"groundview", an:"anview", setup:"setupview", lic:"licview"};
+if(!SETUP_GUIDE){ delete ALL_TABS.setup; delete ALL_VIEWS.setup; }
 // A static build drops the two tabs that need a backend. Unregistering them
 // here is what makes them unreachable — setTab only knows registered tabs, so a
 // stale #tab=an cannot open one. Their markup is removed later, at the end of
@@ -2741,6 +2879,14 @@ addEventListener("hashchange", () => {
       if(t) t.scrollIntoView({behavior:"smooth", block:"start"});
     };
   }
+}
+
+if(!SETUP_GUIDE){
+  // unregistered above; take its markup too so it cannot sit in the tab bar
+  ["tab-setup", "setupview"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.remove();
+  });
 }
 
 if(STATIC_BUILD){

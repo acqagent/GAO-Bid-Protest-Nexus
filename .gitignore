@@ -28,3 +28,4 @@ corpus/
 # in one command, and another 10 MB per revision if it were tracked.
 visualization/map-static.html
 visualization/map-web.html
+visualization/map-connect.html

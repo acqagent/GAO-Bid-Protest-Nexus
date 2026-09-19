@@ -435,6 +435,7 @@ This project uses two licenses, one for code and one for data.
 | --- | --- |
 | Dashboard code, search backend, scripts | [Apache 2.0](LICENSE) |
 | Protest taxonomy, per-decision coding, decision metadata, vector index | [CC BY 4.0](LICENSE-DATA) |
+| The upstream decision corpus | [MIT](LICENSE-CORPUS-MIT) / CC BY, per source |
 | The GAO decisions themselves | Public domain (17 U.S.C. 105) |
 
 In short: use it, change it, build on it, at work or commercially. Just keep the
@@ -448,11 +449,14 @@ In that file the code is Apache 2.0 and the embedded data is CC BY 4.0.
 The Nexus is built on someone else's work, and the corpus came first.
 
 **The decision corpus** came from [Kevin Misener](https://github.com/kmisener90),
-whose [GAO-Bid-Protest-Dataset](https://github.com/kmisener90/GAO-Bid-Protest-Dataset)
-assembled roughly 5,700 GAO bid protest decisions and is released under a
-Creative Commons Attribution license. The PDF URLs, the 33-ground taxonomy, and
-the per-decision coding were derived from that corpus using AI. If you reuse the
-corpus, credit that source too.
+in two collections:
+[GAO-Bid-Protest](https://huggingface.co/datasets/Kmisener/GAO-Bid-Protest) on
+Hugging Face, the larger corpus, under the **MIT License**; and the earlier
+[GAO-Bid-Protest-Dataset](https://github.com/kmisener90/GAO-Bid-Protest-Dataset),
+roughly 5,700 decisions, under a Creative Commons Attribution license. Both are
+used the same way here: the PDF URLs, the 33-ground taxonomy, and the
+per-decision coding were derived from them using AI. If you reuse the corpus,
+credit that source too — see [LICENSE-CORPUS-MIT](LICENSE-CORPUS-MIT).
 
 **The decisions themselves** are works of the U.S. federal government and are
 not protected by U.S. copyright (17 U.S.C. 105), so they are in the public

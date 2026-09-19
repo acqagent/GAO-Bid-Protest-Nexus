@@ -53,8 +53,9 @@ HOW TO ATTRIBUTE
 A citation in this form satisfies the attribution requirement:
 
   GAO Bid Protest Nexus, by Tommy Kim (AcqAgent, https://acqagent.ai),
-  licensed under CC BY 4.0. Built on the GAO-Bid-Protest-Dataset by Kevin
-  Misener (https://github.com/kmisener90/GAO-Bid-Protest-Dataset). Underlying
+  licensed under CC BY 4.0. Built on the GAO bid protest corpora by Kevin
+  Misener (https://huggingface.co/datasets/Kmisener/GAO-Bid-Protest, MIT;
+  https://github.com/kmisener90/GAO-Bid-Protest-Dataset, CC BY). Underlying
   decisions are works of the U.S. Government Accountability Office and are in
   the public domain.
 
@@ -66,10 +67,18 @@ MATERIAL NOT COVERED BY THIS LICENSE
 ================================================================================
 
 Underlying corpus
-  The roughly 5,700 GAO bid protest decisions this project is built on were
-  assembled by Kevin Misener and released under a Creative Commons Attribution
-  license. That license governs your reuse of the corpus itself. Credit that
-  source as well.
+  The GAO bid protest decisions this project is built on were assembled by
+  Kevin Misener and released in two collections:
+
+    GAO-Bid-Protest, the larger corpus, under the MIT License
+    https://huggingface.co/datasets/Kmisener/GAO-Bid-Protest
+
+    GAO-Bid-Protest-Dataset, roughly 5,700 decisions, under a Creative Commons
+    Attribution license
+    https://github.com/kmisener90/GAO-Bid-Protest-Dataset
+
+  Those licenses govern your reuse of the corpus itself; see
+  LICENSE-CORPUS-MIT. Credit that source as well.
 
 The decisions themselves
   Decisions of the U.S. Government Accountability Office are works of the

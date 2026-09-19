@@ -28,12 +28,18 @@ ATTRIBUTION AND THIRD-PARTY MATERIAL
 ================================================================================
 
 The decision corpus
-   This project is built on the GAO-Bid-Protest-Dataset assembled by Kevin
-   Misener (https://github.com/kmisener90/GAO-Bid-Protest-Dataset), a
-   collection of roughly 5,700 GAO bid protest decisions released under a
-   Creative Commons Attribution license. The URLs to the decision PDFs, the
-   33-ground taxonomy, and the per-decision coding were derived from that
-   corpus using AI. If you reuse the corpus, credit that source as well.
+   This project is built on decision corpora assembled by Kevin Misener:
+
+     GAO-Bid-Protest (the larger corpus, MIT License)
+     https://huggingface.co/datasets/Kmisener/GAO-Bid-Protest
+
+     GAO-Bid-Protest-Dataset (roughly 5,700 decisions, Creative Commons
+     Attribution) https://github.com/kmisener90/GAO-Bid-Protest-Dataset
+
+   Both are used here in the same manner: the URLs to the decision PDFs, the
+   33-ground taxonomy, and the per-decision coding were derived from them using
+   AI. See LICENSE-CORPUS-MIT. If you reuse the corpus, credit that source as
+   well.
 
 The decisions themselves
    Decisions of the U.S. Government Accountability Office are works of the
