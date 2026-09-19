@@ -1,0 +1,94 @@
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+Copyright 2026 Tommy Kim (AcqAgent, https://acqagent.ai)
+
+================================================================================
+WHAT THIS FILE COVERS
+================================================================================
+
+This license applies to the data in this repository, which includes:
+
+  - the 33-ground protest taxonomy
+  - the per-decision coding against that taxonomy and the four case facets
+    (disposition, outcome, procurement authority, posture)
+  - the decision metadata, including the derived PDF URLs
+  - the vector index and chunked text shipped in the full bundle
+  - the decision data embedded inside visualization/map.html
+
+The source code in this repository is licensed separately under the Apache
+License, Version 2.0. See LICENSE and NOTICE.
+
+================================================================================
+THE LICENSE
+================================================================================
+
+The data is licensed under the Creative Commons Attribution 4.0 International
+License. You are free to:
+
+  Share    Copy and redistribute the material in any medium or format.
+  Adapt    Remix, transform, and build upon the material for any purpose,
+           including commercially.
+
+These freedoms cannot be revoked as long as you follow the license terms.
+
+Under the following terms:
+
+  Attribution   You must give appropriate credit, provide a link to the
+                license, and indicate if changes were made. You may do so in
+                any reasonable manner, but not in any way that suggests the
+                licensor endorses you or your use.
+
+  No additional restrictions
+                You may not apply legal terms or technological measures that
+                legally restrict others from doing anything the license
+                permits.
+
+Full license text:  https://creativecommons.org/licenses/by/4.0/legalcode
+Plain-language summary:  https://creativecommons.org/licenses/by/4.0/
+
+================================================================================
+HOW TO ATTRIBUTE
+================================================================================
+
+A citation in this form satisfies the attribution requirement:
+
+  GAO Bid Protest Nexus, by Tommy Kim (AcqAgent, https://acqagent.ai),
+  licensed under CC BY 4.0. Built on the GAO-Bid-Protest-Dataset by Kevin
+  Misener (https://github.com/kmisener90/GAO-Bid-Protest-Dataset). Underlying
+  decisions are works of the U.S. Government Accountability Office and are in
+  the public domain.
+
+If you modified the data, say so. For example: "Coding modified from the
+original."
+
+================================================================================
+MATERIAL NOT COVERED BY THIS LICENSE
+================================================================================
+
+Underlying corpus
+  The roughly 5,700 GAO bid protest decisions this project is built on were
+  assembled by Kevin Misener and released under a Creative Commons Attribution
+  license. That license governs your reuse of the corpus itself. Credit that
+  source as well.
+
+The decisions themselves
+  Decisions of the U.S. Government Accountability Office are works of the
+  United States federal government and are not subject to copyright protection
+  in the United States (17 U.S.C. 105). They are in the public domain. No
+  permission is needed to use them, and nothing in this license restricts that.
+  Cite GAO as the source.
+
+Names and marks
+  "AcqAgent" and the AcqAgent name and logo are not licensed under CC BY 4.0
+  or Apache 2.0. You may state that your work is based on the GAO Bid Protest
+  Nexus. You may not present a modified version as an official AcqAgent
+  release or use the AcqAgent name in a way that suggests endorsement.
+
+================================================================================
+NO WARRANTY
+================================================================================
+
+The data is provided as is, without warranties or conditions of any kind. The
+coding was derived using AI and has not been verified decision by decision. It
+is not legal advice. Verify anything you rely on against the original GAO
+decision. Found a miscoded decision? Please open an issue.

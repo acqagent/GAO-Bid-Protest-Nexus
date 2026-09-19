@@ -1,0 +1,56 @@
+GAO Bid Protest Nexus
+Copyright 2026 Tommy Kim (AcqAgent, https://acqagent.ai)
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file for the
+full terms.
+
+================================================================================
+WHAT IS COVERED BY WHICH LICENSE
+================================================================================
+
+1. Source code
+   The dashboard code, the search backend, and the scripts are licensed under
+   the Apache License, Version 2.0. See LICENSE.
+
+2. Data, taxonomy, and derived indexes
+   The 33-ground protest taxonomy, the per-decision coding, the decision
+   metadata, and the vector index are licensed under the Creative Commons
+   Attribution 4.0 International License (CC BY 4.0). See LICENSE-DATA.
+
+3. Files that contain both
+   The single-file dashboard (visualization/map.html) embeds the decision data
+   inside the application code. In that file, and in any other file combining
+   the two, the code is Apache 2.0 and the embedded decision data, taxonomy,
+   and coding are CC BY 4.0.
+
+================================================================================
+ATTRIBUTION AND THIRD-PARTY MATERIAL
+================================================================================
+
+The decision corpus
+   This project is built on the GAO-Bid-Protest-Dataset assembled by Kevin
+   Misener (https://github.com/kmisener90/GAO-Bid-Protest-Dataset), a
+   collection of roughly 5,700 GAO bid protest decisions released under a
+   Creative Commons Attribution license. The URLs to the decision PDFs, the
+   33-ground taxonomy, and the per-decision coding were derived from that
+   corpus using AI. If you reuse the corpus, credit that source as well.
+
+The decisions themselves
+   Decisions of the U.S. Government Accountability Office are works of the
+   United States federal government and are not subject to copyright
+   protection in the United States (17 U.S.C. 105). They are in the public
+   domain. Cite GAO as the source.
+
+Models
+   The full bundle downloads BAAI/bge-base-en-v1.5 and BAAI/bge-reranker-base
+   at first run. Those models are not distributed with this project and remain
+   subject to their own licenses.
+
+================================================================================
+DISCLAIMER
+================================================================================
+
+AcqAgent is an independent, open source project. It is not affiliated with,
+sponsored by, or endorsed by the U.S. Government Accountability Office or any
+other federal agency. Content is provided for informational purposes only and
+is not legal, financial, or contracting advice. Views expressed are personal.

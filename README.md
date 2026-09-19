@@ -402,18 +402,77 @@ vector/chunks.jsonl      146 MB — 77,979 text chunks from the decision corpus
 vector/embeddings.npy    229 MB — precomputed dense embeddings (bge-base-en-v1.5, 768-d)
 ```
 
+## Hosting the static build
+
+Map, Table, Ground detail and License need nothing but a file server. Dynamic
+Search needs the vector index behind `scripts/serve.py`, and Analysis needs a
+model endpoint, so a static build drops those two tabs:
+
+```bash
+python3 scripts/build_static.py     # -> visualization/map-static.html
+```
+
+Upload that one file as `index.html`. It is ~11 MB raw and ~1.8 MB gzipped —
+mostly embedded JSON, so turn gzip or brotli on at the server and it compresses
+about 6:1. No build step, no dependencies, no backend.
+
+The dashboard carries a single `STATIC_BUILD` switch; the script flips it and
+removes the two tabs' markup once the page has initialized. Rebuild whenever
+`visualization/map.html` changes — it is a one-line transform, not a fork, so
+the two cannot drift.
+
+**Do not put `scripts/serve.py` on a public address.** It binds loopback for a
+reason: `/api/analyze` and `/api/compare` would let anyone spend the key in
+`OPENAI_API_KEY`, and `/api/pdf` becomes an open fetch proxy. If you want
+Dynamic Search hosted, put a reverse proxy in front that forwards only
+`/api/search` and the static files, and leave `OPENAI_API_KEY` unset.
+
 ## License
 
-- **Dashboard** (scripts, visualization, search index):
-  [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/)
-  (CC BY 4.0). Share and adapt freely, including commercially, with
-  attribution.
-- **Corpus credit**: Kevin Misener
-  ([@kmisener90](https://github.com/kmisener90),
-  [GAO-Bid-Protest-Dataset](https://github.com/kmisener90/GAO-Bid-Protest-Dataset))
-  provided the corpus of ~5,700 GAO bid protest decisions, in which AI was
-  used to derive the URLs to the decision PDFs. Please credit this source
-  when reusing the corpus.
-- **Underlying government data**: GAO bid protest decisions are works of the
-  U.S. federal government, not protected by U.S. copyright (17 U.S.C. § 105)
-  — public domain. Cite GAO as the source.
+This project uses two licenses, one for code and one for data.
+
+| What | License |
+| --- | --- |
+| Dashboard code, search backend, scripts | [Apache 2.0](LICENSE) |
+| Protest taxonomy, per-decision coding, decision metadata, vector index | [CC BY 4.0](LICENSE-DATA) |
+| The GAO decisions themselves | Public domain (17 U.S.C. 105) |
+
+In short: use it, change it, build on it, at work or commercially. Just keep the
+credit. See [NOTICE](NOTICE) for the attribution you need to carry forward.
+
+`visualization/map.html` embeds the decision data inside the application code.
+In that file the code is Apache 2.0 and the embedded data is CC BY 4.0.
+
+### Credits
+
+The Nexus is built on someone else's work, and the corpus came first.
+
+**The decision corpus** came from [Kevin Misener](https://github.com/kmisener90),
+whose [GAO-Bid-Protest-Dataset](https://github.com/kmisener90/GAO-Bid-Protest-Dataset)
+assembled roughly 5,700 GAO bid protest decisions and is released under a
+Creative Commons Attribution license. The PDF URLs, the 33-ground taxonomy, and
+the per-decision coding were derived from that corpus using AI. If you reuse the
+corpus, credit that source too.
+
+**The decisions themselves** are works of the U.S. federal government and are
+not protected by U.S. copyright (17 U.S.C. 105), so they are in the public
+domain. Cite GAO as the source.
+
+### Name and marks
+
+The code and data are yours to reuse. The AcqAgent name and logo are not. Say
+your work is based on the GAO Bid Protest Nexus, but do not present a fork as an
+official AcqAgent release.
+
+### Earlier releases
+
+Releases before v1.0 were published under CC BY 4.0 in full, including the code.
+Those releases stay available under that license. From v1.0 forward, code is
+Apache 2.0 and data is CC BY 4.0.
+
+### Accuracy
+
+The coding was derived using AI and has not been verified decision by decision.
+This is not legal advice. Verify anything you rely on against the original GAO
+decision. Found a miscoded decision, or want a ground split differently? Open an
+issue.
