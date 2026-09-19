@@ -191,6 +191,16 @@ h1 small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-to
 #credit .row{margin-bottom:5px}
 #credit .warn{margin-top:8px;border-left:2px solid #e0a34d;padding:5px 0 5px 9px;color:#d8c39a}
 #tab-lic.on{background:#233042;color:var(--ink);border-color:#3a4b63}
+#limits{margin:0 0 12px;border:1px solid var(--line);border-left:3px solid #e0a34d;
+  border-radius:0 8px 8px 0;background:#12161d;padding:10px 12px;font-size:11px;
+  line-height:1.6;color:var(--mut)}
+#limits .hd{color:#ffd79a;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  font-size:10px;margin-bottom:6px}
+#limits ul{margin:0;padding-left:15px}
+#limits li{margin:4px 0}
+#limits b{color:var(--ink);font-weight:600}
+#limits a{color:#7ea6ff;text-decoration:none}
+#limits a:hover{text-decoration:underline}
 #licview{position:absolute;inset:0;overflow:auto;padding:22px 26px 48px 66px}
 .lic{max-width:900px}
 .lic h2{font-size:19px;margin:0 0 6px}
@@ -382,6 +392,7 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
           check anything you rely on against the original decision.</div>
         <div class="row" style="margin-top:7px"><a href="#tab=lic" id="licmore">Full license and credits &rarr;</a></div>
       </div>
+    <div id="limits"></div>
     <div id="filterbtns">
       <button id="selectall" title="Select every value in every filter">Select all</button>
       <button id="selectnone" title="Select no values in any filter">Select none</button>
@@ -535,6 +546,14 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
             protected by U.S. copyright (17 U.S.C. 105), so they are in the public domain. Cite
             GAO as the source.</li>
         </ul>
+
+        <h3 id="limits-full">What this data can and cannot tell you</h3>
+        <p>The corpus is broad but uneven, and the gaps are not random. Read the numbers
+        with these in mind.</p>
+        <ul id="limitslist"></ul>
+        <p>None of this makes the corpus unusable &mdash; it makes it a starting point. Every
+        decision links back to its page on gao.gov, and that is the authority. Use this to find
+        decisions and see shape; use the decision itself to be sure.</p>
 
         <h3>Accuracy</h3>
         <div class="note">
@@ -2591,6 +2610,57 @@ addEventListener("hashchange", () => {
   const t = /[#&]tab=(\w+)/.exec(location.hash || "");
   if(t && TABS[t[1]]) setTab(t[1]);
 });
+
+/* ---------- limitations, counted from the corpus rather than asserted ------ */
+{
+  const num = x => x.toLocaleString();
+  const N         = MAPPED.length;
+  const noOutcome = MAPPED.filter(m=>!m.outcome).length;
+  const noPdf     = MAPPED.filter(m=>!/\.pdf($|\?|#)/i.test(m.pdf || "")).length;
+  const ocr       = MAPPED.filter(m=>m.tp === "ocr_suspect").length;
+  const noDigest  = MAPPED.filter(m=>!m.dig).length;
+  const years     = MAPPED.map(m=>m.year).filter(Boolean);
+  const span      = years.length ? `${Math.min(...years)} to ${Math.max(...years)}` : "unknown";
+  const pct       = k => Math.round(k / N * 100);
+
+  const items = [
+    `<b>${num(N_PREDICTED)} of ${num(N)} grounds (${pct(N_PREDICTED)}%) were assigned by a
+     model</b>, not by a person, from the decision text. They carry a † in the Table and in
+     popups. Only ${num(N_HAND)} were coded by hand.`,
+    `<b>${num(noOutcome)} decisions (${pct(noOutcome)}%) have no outcome recorded.</b> Ground
+     detail's sustain rates are computed over the ones that do, so they describe a subset, not
+     the whole corpus.`,
+    `<b>${num(noPdf)} decisions (${pct(noPdf)}%) have no direct PDF link</b> — they link to
+     their page on gao.gov instead, where the document is one click further on.`,
+    `<b>${num(noDigest)} decisions have no digest</b>, the short summary GAO writes at the top.
+     Where it is missing, the short description column is thinner.`,
+    `<b>${num(ocr)} decisions came from scans</b> whose text extraction is unreliable.`,
+    `The corpus runs <b>${span}</b> and is a snapshot, not a live feed. Recent decisions may be
+     missing, and GAO's own standards have moved over that span.`,
+  ];
+  const full = document.getElementById("limitslist");
+  if(full) full.innerHTML = items.map(t=>`<li>${t}</li>`).join("");
+
+  const brief = [
+    `<b>${pct(N_PREDICTED)}% of grounds</b> are model-assigned, not reviewed (marked †).`,
+    `<b>${pct(noOutcome)}% have no outcome recorded</b>, so sustain rates cover a subset.`,
+    `<b>${num(noPdf)}</b> link to a gao.gov page rather than straight to the PDF.`,
+  ];
+  if(STATIC_BUILD) brief.push(
+    `Full-text search and the AI analysis need a server, so they are <b>not in this demo</b>.`);
+  const box = document.getElementById("limits");
+  if(box){
+    box.innerHTML = `<div class="hd">Limitations</div><ul>${brief.map(t=>`<li>${t}</li>`).join("")}</ul>`
+      + `<div style="margin-top:7px"><a href="#tab=lic" id="limitsmore">What this can and cannot tell you &rarr;</a></div>`;
+    const more = document.getElementById("limitsmore");
+    if(more) more.onclick = e => {
+      e.preventDefault();
+      setTab("lic");
+      const t = document.getElementById("limits-full");
+      if(t) t.scrollIntoView({behavior:"smooth", block:"start"});
+    };
+  }
+}
 
 if(STATIC_BUILD){
   // everything has initialised by now, so the dead markup can go
