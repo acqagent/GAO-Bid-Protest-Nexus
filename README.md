@@ -87,11 +87,14 @@ all (Analysis needs a model endpoint, and asks you for the decision).
   77,979-chunk vector index, and the decision metadata). Unzip and follow
   the Quick start to also get Dynamic Search over the full decision text
   (local models; the first run downloads ~1.4 GB of models,
-  then it is fully offline). **Note:** the shipped vector index still covers
-  the earlier 5,986-decision corpus, not all 33,136 — Map, Table and Ground
-  detail read the embedded data and are current; Dynamic Search searches
-  whatever index you point it at. Rebuild it with `scripts/vectorize.py` to
-  cover the whole corpus.
+  then it is fully offline).
+  **A v2.1 full bundle is coming soon.** The download available today still
+  carries the index built over the earlier 5,986-decision corpus, so Dynamic
+  Search covers that subset while Map, Table and Ground detail read the
+  embedded data and are current across all 33,136. The rebuilt index covering
+  the whole corpus is finished and in review; this section will point at it
+  once it ships. If you would rather not wait, `scripts/vectorize.py` builds
+  the index yourself.
   **Download:
   [acqagent.ai/downloads/gao-bid-protest-nexus-full.zip](https://acqagent.ai/downloads/gao-bid-protest-nexus-full.zip)**
   (resumable, so an interrupted download can pick up where it stopped).
