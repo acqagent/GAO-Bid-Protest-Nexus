@@ -1,29 +1,40 @@
 # GAO Bid Protest Nexus
 
-A self-hosted, interactive dashboard over **5,986 GAO bid protest decisions**
-(~5,978 decision PDFs). One HTML file carries the Map, Table and Analysis
-views; a small Python server adds the Dynamic Search view (grounded search over
-the full decision text) and takes over the work the Analysis tab would
-otherwise ask of your browser.
+A self-hosted, interactive dashboard over **33,136 GAO bid protest decisions**,
+1925 through 2026. One HTML file carries the Map, Table, Ground detail,
+Analysis and License tabs; a small Python server adds the Dynamic Search tab
+(grounded search over the full decision text) and takes over the work the
+Analysis tab would otherwise ask of your browser.
 
-## The five tabs
+**v2.1.** Read the numbers as a map of the corpus, not as findings: 27,232 of
+the 33,136 grounds were assigned by a model rather than a person, and 16,451
+decisions carry no recorded outcome. The License tab spells this out in full,
+and every decision links back to gao.gov, which is the authority. See
+[Accuracy](#accuracy).
+
+## The six tabs
 
 - **Map** — an interactive **3D** constellation: the 33 protest grounds sit on
-  a sphere, each surrounded by its own cluster of decisions, with the four
-  sub-filter facets (Disposition, Overall Outcome, Procurement Authority,
-  Protest Posture) forming a core at the centre that every connection runs
-  through. **All 5,986 decisions are rendered** as dots, and a ground's cluster
+  a sphere, each surrounded by its own cluster of decisions, with the
+  sub-filter facets (Overall Outcome, Procurement Authority, Protest Posture,
+  Decade) forming a core at the centre that every connection runs
+  through. **All 33,136 decisions are rendered** as dots, and a ground's cluster
   grows with the number of decisions on it, so volume is readable before you
-  read a label. Dots that don't match the active filters are drawn dim. Node sizes and edge weights scale with the number of
-  matching decisions. Drag to rotate, scroll to zoom, right/ctrl-drag to pan,
-  double-click to reset. Hover a node to trace its connections; click any
-  node for a popup with sub-filter breakdowns and the matching decisions
-  (B-number, short description, gao.gov and PDF links). The left-panel
+  read a label. Dots that don't match the active filters are drawn dim. Node
+  sizes and edge weights scale with the number of matching decisions. Drag to
+  rotate, scroll to zoom, right/ctrl-drag to pan, double-click to reset. Hover
+  a node to trace its connections; click a **labelled** node — a ground or a
+  facet value — for a popup with sub-filter breakdowns and the matching
+  decisions (B-number, short description, gao.gov and PDF links). Individual
+  decision dots are scenery, not targets: at 33,136 of them, clicking one by
+  accident was easier than clicking the ground you meant. The left-panel
   filters drive every view. The **Select all / Select none** buttons (top of
   the side panel) set every value at once, and each filter facet also has
   **all / none** quick toggles in its header.
-- **Table** — every matching decision: B-number, short description, all five
-  filter values, and links to the gao.gov decision page and PDF.
+- **Table** — every matching decision: B-number, short description, year,
+  case name, ground, outcome, authority, posture, and links to the gao.gov
+  decision page and PDF. It pages through the full matching set 200 rows at a
+  time, and the first column carries the checkbox that feeds the Analysis tab.
 - **Dynamic Search** — hybrid retrieval over the full decision text (dense
   vectors + BM25, RRF fusion, cross-encoder re-ranking). Returns the matching
   passages, each linked back to its source decision and PDF.
@@ -33,26 +44,27 @@ otherwise ask of your browser.
   the Table's first column, a Map popup, a Dynamic Search result — or hit the
   **✦ Analyze** button on any single decision. Output lands on this tab, never
   in the view you picked from. See [Decision analysis](#decision-analysis).
-- **Ground detail** — how often one ground is sustained, against the 12.2%
+- **Ground detail** — how often one ground is sustained, against the 6.0%
   corpus base rate, with the 95% confidence interval its sample size supports,
   a disposition breakdown, splits by authority and posture, and links to every
   sustained decision on that ground.
+- **License** — the licensing table, the citation to copy, the credits, and a
+  plain-language account of what this data can and cannot tell you.
 
 Ground detail reads the whole corpus and ignores the side-panel filters: it
 answers what the odds are on a ground, which is a property of the data rather
-than of the current selection. It carries its intervals everywhere, because
-most of the apparent spread between grounds is sampling noise —
-of the 33 grounds only three (OCI, Corrective Action Challenge and Technical
-Evaluation) are distinguishable from the base rate once you correct for
-testing 33 of them.
+than of the current selection. It carries its 95% intervals everywhere, because
+at this corpus size the spread between grounds is mostly real but the tails are
+not: 25 of the 33 grounds separate from the 6.0% base rate (19 above, 6 below),
+and the remaining 8 do not — their intervals still straddle it.
 
 **All decisions are in the 3D map.** Unlike a flat list, the map renders every
-one of the 5,986 decision dots at once, so nothing is hidden behind a cap —
+one of the 33,136 decision dots at once, so nothing is hidden behind a cap —
 the filters only change which dots are bright (matching) versus dim. Each
-ground ball also shows its live count (e.g. "Past Performance 808"). For
+ground ball also shows its live count (e.g. "Past Performance 934"). For
 scrollable, link-forward views of a single ground's full decision set, use a
-ground's popup (first 60 listed, "…and N more") or the Table tab (up to 1,000
-rows).
+ground's popup (first 60 listed, "…and N more") or the Table tab, which pages
+through the whole matching set 200 rows at a time.
 
 All decision text and links come from the U.S. Government Accountability
 Office (public domain) at gao.gov. The dashboard itself is a single
@@ -61,9 +73,9 @@ all (Analysis needs a model endpoint, and asks you for the decision).
 
 ## Downloads
 
-- **Basic** (`gao-bid-protest-nexus-basic.zip`, ~0.3 MB) — just
+- **Basic** (`gao-bid-protest-nexus-basic.zip`, ~1.8 MB) — just
   `visualization/map.html`. Unzip and open the file in any browser: you get
-  the Map and Table tabs (all filters, the 3D map with all 5,986 decisions,
+  the Map and Table tabs (all filters, the 3D map with all 33,136 decisions,
   the full decision table). No Python, no server, no models — fully offline.
   The **Analysis** tab works here too, once you point it at a model endpoint
   and hand it the decision — see
@@ -74,7 +86,11 @@ all (Analysis needs a model endpoint, and asks you for the decision).
   77,979-chunk vector index, and the decision metadata). Unzip and follow
   the Quick start to also get Dynamic Search over the full decision text
   (local models; the first run downloads ~1.4 GB of models,
-  then it is fully offline).
+  then it is fully offline). **Note:** the shipped vector index still covers
+  the earlier 5,986-decision corpus, not all 33,136 — Map, Table and Ground
+  detail read the embedded data and are current; Dynamic Search searches
+  whatever index you point it at. Rebuild it with `scripts/vectorize.py` to
+  cover the whole corpus.
   **Download:
   [acqagent.ai/downloads/gao-bid-protest-nexus-full.zip](https://acqagent.ai/downloads/gao-bid-protest-nexus-full.zip)**
   (resumable, so an interrupted download can pick up where it stopped).
@@ -84,17 +100,18 @@ to search the full text of the decisions.
 
 ### What is in this repository
 
-This repo holds the **source tree** (~4.3 MB): the dashboard, the server
-scripts, the decision metadata, and the index metadata. It does **not**
-contain the vector index — `vector/chunks.jsonl` (146 MB) and
+This repo holds the **source tree** (~25 MB): the dashboard, the hosting build
+of it, the server scripts, the decision metadata, and the index metadata. It
+does **not** contain the vector index — `vector/chunks.jsonl` (146 MB) and
 `vector/embeddings.npy` (229 MB) are each over GitHub's 100 MB per-file
 limit. Get them from the
 [full zip](https://acqagent.ai/downloads/gao-bid-protest-nexus-full.zip).
 
-Cloning the repo is enough to open the Map, Table and Analysis tabs. **Dynamic
-Search additionally requires the two `vector/` files** — without them
-`scripts/serve.py` still runs, it just has no index to search (and the Analysis
-tab then sources decisions from their PDFs instead of from the index).
+Cloning the repo is enough to open the Map, Table, Ground detail, Analysis and
+License tabs. **Dynamic Search additionally requires the two `vector/` files** —
+without them `scripts/serve.py` still runs, it just has no index to search (and
+the Analysis tab then sources decisions from their PDFs instead of from the
+index).
 
 ## Quick start
 
@@ -248,18 +265,19 @@ the decision" rather than guess, and to flag their own gaps.
 
 ## Decision PDF links
 
-**5,921 of 5,986 decisions link straight to their PDF.** The dashboard shows
-one of three labels, so a link never promises more than it is:
+**5,893 of 33,136 decisions link straight to their PDF.** The rest link to
+their page on gao.gov, where the document is one click further on. The
+dashboard shows one of three labels, so a link never promises more than it is:
 
 | Label | Count | Meaning |
 |---|---|---|
-| `PDF ↗` | 5,921 | a resolver pass fetched this URL and got a PDF back |
-| `PDF ↗?` (amber, dotted) | 51 | a `.pdf` URL the corpus carries that no run has confirmed |
-| `no PDF; text on that page` | 14 | GAO publishes no PDF; the text is on the gao.gov page |
+| `PDF ↗` | 5,893 | a resolver pass fetched this URL and got a PDF back |
+| `PDF ↗?` (amber, dotted) | 4 | a `.pdf` URL the corpus carries that no run has confirmed |
+| `find PDF` / gao.gov only | 27,239 | no direct PDF URL yet — the gao.gov page is the link |
 
-The 51 use GAO's older nested layout, `/assets/330/325381.pdf`, whose folder is
-`ceil(number/10000)*10`. That form is now one of the candidates the resolver
-tests, so a rerun should confirm them.
+The `find PDF` link appears when `scripts/serve.py` is running: it asks the
+local server to resolve that one decision's PDF on demand. To resolve the
+whole set ahead of time, run `scripts/resolve_pdfs.py` (below).
 
 To resolve links yourself, or to import a set someone else resolved — either
 way the basic build ships them, since the data is embedded in `map.html`:
@@ -316,7 +334,7 @@ rather than trusting them.
 ## Minimum hardware requirements
 
 The Map and Table tabs are plain HTML with embedded data — no server or model
-needed. The Map is an interactive 3D view that draws all 5,986 decision dots,
+needed. The Map is an interactive 3D view that draws all 33,136 decision dots,
 so use a recent version of a hardware-accelerated browser (Chrome, Edge,
 Firefox, or Safari) on a machine with a discrete or modern integrated GPU for
 smooth rotation; an older machine will still render it, just less fluently.
@@ -404,6 +422,9 @@ In the repo *and* the full zip:
 
 ```
 visualization/map.html   the dashboard (all Map/Table/Analysis data embedded)
+visualization/map-connect.html  hosting build: same six tabs plus a Setup tab
+                         explaining how to connect your own model endpoint
+scripts/build_static.py  produces the static / web / connect hosting builds
 scripts/serve.py         HTTP server: static files + search + analysis API
 scripts/searchlib.py     hybrid search core (dense + BM25 + RRF + re-rank)
 scripts/analysis.py      decision text sourcing, PDF handling, analysis prompts
@@ -413,7 +434,7 @@ scripts/vectorize.py     builds the search index: fetch, extract, chunk, embed
 scripts/resolve_pdfs.py  one-off: gao.gov landing pages -> direct PDF links
 vector/meta.json         index metadata (model, dimensionality, chunk count)
 data/map.json            decision metadata (B-numbers, gao.gov/PDF links)
-data/mapped-decisions.json  per-decision ground + four filter values
+data/mapped-decisions.json  per-decision ground + filter values (earlier corpus)
 requirements.txt         Python dependencies for the Dynamic Search backend
 ```
 
@@ -425,24 +446,25 @@ vector/chunks.jsonl      146 MB — 77,979 text chunks from the decision corpus
 vector/embeddings.npy    229 MB — precomputed dense embeddings (bge-base-en-v1.5, 768-d)
 ```
 
-## Hosting the static build
+## Hosting it
 
-Map, Table, Ground detail and License need nothing but a file server. Dynamic
-Search needs the vector index behind `scripts/serve.py`, and Analysis needs a
-model endpoint, so a static build drops those two tabs:
+Three builds come out of the same source file, each one switch away:
 
-```bash
-python3 scripts/build_static.py     # -> visualization/map-static.html
-```
+| Build | Command | Tabs | Needs |
+|---|---|---|---|
+| Local (default) | `visualization/map.html` | all six | nothing for Map/Table/Ground/License; `scripts/serve.py` for Dynamic Search; a model endpoint for Analysis |
+| Static | `python3 scripts/build_static.py` | four | a file server, nothing else — Dynamic Search and Analysis are removed outright |
+| Web | `python3 scripts/build_static.py --web` | all six | a file server; the two backend tabs explain themselves to a visitor instead of naming a server they cannot start |
+| Connect | `python3 scripts/build_static.py --connect` | all six + Setup | same as Web, plus a Setup tab walking a visitor through pointing it at their own OpenAI-compatible endpoint |
 
-Upload that one file as `index.html`. It is ~11 MB raw and ~1.8 MB gzipped —
+Upload the output as `index.html`. It is ~10.9 MB raw and ~1.8 MB gzipped —
 mostly embedded JSON, so turn gzip or brotli on at the server and it compresses
 about 6:1. No build step, no dependencies, no backend.
 
-The dashboard carries a single `STATIC_BUILD` switch; the script flips it and
-removes the two tabs' markup once the page has initialized. Rebuild whenever
-`visualization/map.html` changes — it is a one-line transform, not a fork, so
-the two cannot drift.
+The switches (`STATIC_BUILD`, `WEB_BUILD`, `SETUP_GUIDE`) are three `const`
+lines in `visualization/map.html`; the script flips one and lets the page strip
+its own markup after it has initialized. Rebuild whenever `map.html` changes —
+it is a one-line transform, not a fork, so the builds cannot drift.
 
 **Do not put `scripts/serve.py` on a public address.** It binds loopback for a
 reason: `/api/analyze` and `/api/compare` would let anyone spend the key in
