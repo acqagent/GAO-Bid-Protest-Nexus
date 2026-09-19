@@ -28,4 +28,7 @@ corpus/
 # in one command, and another 10 MB per revision if it were tracked.
 visualization/map-static.html
 visualization/map-web.html
-visualization/map-connect.html
+# map-connect.html is NOT ignored — it is committed so the hosted build with
+# the Setup guide can be downloaded straight from the repo. Rebuild it with
+#   python3 scripts/build_static.py --connect --web
+# and commit the result whenever visualization/map.html changes.
