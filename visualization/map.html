@@ -638,6 +638,14 @@ const DATA = {"version":2,"n":33136,"grounds":[{"slug":"solicitation_terms_ambig
           on any static host. scripts/build_static.py flips this line. */
 const STATIC_BUILD = false;
 
+/* WEB_BUILD ----------------------------------------------------------------
+   false: running locally, where scripts/serve.py may well be behind this page.
+   true : a hosted copy with no backend. Skips the /api/config probe, so a
+          public site does not log a 404 on every pageview, and swaps the
+          "start the server" copy for something a visitor can act on.
+   scripts/build_static.py --web flips this line. */
+const WEB_BUILD = false;
+
 const GROUNDS = DATA.grounds;
 const MAPPED = DATA.decisions;                    // the full 33,136-decision corpus
 const N_PREDICTED = MAPPED.filter(m=>m.predicted).length;
@@ -1727,12 +1735,29 @@ function activeSearchFilters(){
   return f;
 }
 
+function searchUnavailableHTML(){
+  return WEB_BUILD
+    ? "<span class='mut'>Full-text search runs against a vector index of the decision "
+      + "text, which is too large to ship with this page and needs a small server behind "
+      + "it. It is not part of this hosted copy. Everything else here — the map, the "
+      + "table, the ground statistics — works without it.</span>"
+    : "<span class='mut'>Search unavailable. Start the server: "
+      + "<code>.venv/bin/python scripts/serve.py</code>, then reload.</span>";
+}
+
 async function runSearch(){
   const q = chatq.value.trim(); if(!q) return;
   chatq.value = "";
   chatSend.disabled = true;
   appendMsg("user", esc(q));
   const bot = appendMsg("bot","<span class='mut'>Searching the decision corpus…</span>");
+  if(WEB_BUILD){
+    // no backend behind a hosted copy, so say so rather than firing a request
+    // we already know will 404 and land in the site's logs
+    bot.querySelector(".mtext").innerHTML = searchUnavailableHTML();
+    chatSend.disabled = false;
+    return;
+  }
   try{
     const f = activeSearchFilters();
     const url = API_BASE+"/api/search?q="+encodeURIComponent(q)+"&k=6" +
@@ -1763,7 +1788,7 @@ async function runSearch(){
     }
   }catch(e){
     bot.querySelector(".mtext").innerHTML =
-      "<span class='mut'>Search unavailable. Start the server: <code>.venv/bin/python scripts/serve.py</code>, then reload.</span>";
+      searchUnavailableHTML();
   }
   chatSend.disabled = false;
   chatmsgs.scrollTop = chatmsgs.scrollHeight;
@@ -2109,10 +2134,15 @@ function renderCfg(){
        ${c.serverKey ? `<b>A key is already set in the server's environment</b> — leave the key box empty and it never touches the browser.`
                      : `No key in the server's environment. Either restart it with <code>OPENAI_API_KEY=… .venv/bin/python scripts/serve.py</code>, or type one here — typed keys are kept in this browser's localStorage only.`}
        Corpus text: <b>${SRV.corpus ? "available" : "not loaded"}</b> · PDF extraction: <b>${SRV.pdf_extract || "not installed (pip install pypdf)"}</b>.`
-    : `No local server — this page is talking to the endpoint directly, so the endpoint must allow
-       browser requests (CORS) and the key is kept in this browser's localStorage only.
-       There is no decision text here either, so you will be asked for the PDF or the text.
-       Running <code>scripts/serve.py</code> removes all three of those limits.`;
+    : (WEB_BUILD
+      ? `This page calls the endpoint from your browser, so it has to allow browser requests
+         (CORS), and your key is kept in <b>this browser only</b> — it is never sent to the
+         site you are reading this on. There is no decision text here either, so you will be
+         asked for the PDF or to paste the text.`
+      : `No local server — this page is talking to the endpoint directly, so the endpoint must allow
+         browser requests (CORS) and the key is kept in this browser's localStorage only.
+         There is no decision text here either, so you will be asked for the PDF or the text.
+         Running <code>scripts/serve.py</code> removes all three of those limits.`);
 }
 function saveCfg(){
   lsSet(LSK.cfg, {base: document.getElementById("cfgbase").value.trim(),
@@ -2622,7 +2652,7 @@ document.getElementById("anquestion").classList.add("hidden");
 /* Ask the server what it can do. Absent (the basic build), everything falls
    back to the browser. */
 (async function probeServer(){
-  if(!STATIC_BUILD && location.protocol !== "file:"){
+  if(!STATIC_BUILD && !WEB_BUILD && location.protocol !== "file:"){
     try{
       const r = await fetch(API_BASE + "/api/config", {cache:"no-store"});
       if(r.ok) SRV = await r.json();

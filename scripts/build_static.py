@@ -13,19 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Produce the static build of the dashboard, for hosting on any web server.
+"""Produce a hosting build of the dashboard. Two shapes, one switch each.
 
-The dashboard carries one switch, STATIC_BUILD. Flipping it drops the two tabs
-that need a backend — Dynamic Search, which needs the vector index behind
-scripts/serve.py, and Analysis, which needs a model endpoint — and removes their
-markup from the page, so a stale deep link cannot reach them either. Map, Table,
-Ground detail and License remain, and they need nothing but a file server.
+    python3 scripts/build_static.py          # -> visualization/map-static.html
+    python3 scripts/build_static.py --web    # -> visualization/map-web.html
 
-    python3 scripts/build_static.py
-    # -> visualization/map-static.html, ready to upload
+--static (the default) flips STATIC_BUILD. That drops the two tabs that need a
+backend — Dynamic Search, which needs the vector index behind scripts/serve.py,
+and Analysis, which needs a model endpoint — and removes their markup, so a
+stale deep link cannot reach them either. Four tabs remain and want nothing but
+a file server.
 
-Rebuild it whenever visualization/map.html changes; this script is a one-line
-transform, not a fork, so the two never drift.
+--web keeps all six tabs and flips WEB_BUILD instead. Everything still renders;
+the two backend tabs explain themselves to a visitor rather than telling them to
+start a server they have no access to, and the page stops probing /api/config,
+so a public site is not logging a 404 on every pageview. Analysis still works
+for a visitor who supplies their own endpoint and their own decision text.
+
+Rebuild whenever visualization/map.html changes; this is a one-line transform,
+not a fork, so they cannot drift.
 """
 
 import argparse
@@ -36,37 +42,57 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "visualization", "map.html")
-OUT = os.path.join(ROOT, "visualization", "map-static.html")
-FLAG = re.compile(r"^const STATIC_BUILD = (true|false);$", re.M)
+MODES = {
+    "static": {
+        "flag": "STATIC_BUILD",
+        "out": "map-static.html",
+        "tabs": "Map, Table, Ground detail, License",
+        "note": "dropped: Dynamic Search (needs the vector index), "
+                "Analysis (needs a model endpoint)",
+    },
+    "web": {
+        "flag": "WEB_BUILD",
+        "out": "map-web.html",
+        "tabs": "Map, Table, Dynamic Search, Ground detail, Analysis, License",
+        "note": "all six kept; the two backend tabs explain themselves and the "
+                "/api/config probe is off",
+    },
+}
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--src", default=SRC, help="the full dashboard to build from")
-    ap.add_argument("--out", default=OUT, help="where to write the static build")
+    ap.add_argument("--out", default="", help="where to write it (defaults per mode)")
+    ap.add_argument("--web", action="store_true",
+                    help="keep all six tabs; suppress the backend probe and reword "
+                         "the two tabs that need one")
     args = ap.parse_args()
 
-    html = open(args.src, encoding="utf-8").read()
-    hits = FLAG.findall(html)
-    if len(hits) != 1:
-        sys.exit(f"{args.src}: expected exactly one STATIC_BUILD line, found {len(hits)}. "
-                 f"Has the switch been renamed?")
-    out = FLAG.sub("const STATIC_BUILD = true;", html, count=1)
-    if out == html:
-        sys.exit(f"{args.src} is already a static build — build from the full dashboard")
+    mode = MODES["web" if args.web else "static"]
+    out_path = args.out or os.path.join(ROOT, "visualization", mode["out"])
+    flag = re.compile(rf"^const {mode['flag']} = (true|false);$", re.M)
 
-    os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
-    with open(args.out, "w", encoding="utf-8") as f:
+    html = open(args.src, encoding="utf-8").read()
+    hits = flag.findall(html)
+    if len(hits) != 1:
+        sys.exit(f"{args.src}: expected exactly one {mode['flag']} line, found "
+                 f"{len(hits)}. Has the switch been renamed?")
+    if hits[0] == "true":
+        sys.exit(f"{args.src} already has {mode['flag']} on — build from the full dashboard")
+    out = flag.sub(f"const {mode['flag']} = true;", html, count=1)
+
+    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
         f.write(out)
 
     raw = len(out.encode())
     gz = len(gzip.compress(out.encode(), 9))
-    print(f"[build] {os.path.relpath(args.out, ROOT)}")
+    print(f"[build] {os.path.relpath(out_path, ROOT)}  ({mode['flag']} on)")
     print(f"        {raw / 1048576:.1f} MB raw · {gz / 1048576:.1f} MB gzipped")
-    print("        tabs: Map, Table, Ground detail, License")
-    print("        dropped: Dynamic Search (needs the vector index), "
-          "Analysis (needs a model endpoint)")
+    print(f"        tabs: {mode['tabs']}")
+    print(f"        {mode['note']}")
     print("[serve] upload it as index.html; it needs nothing but a file server.")
     print("        Turn on gzip or brotli — it is mostly embedded JSON and "
           "compresses about 10:1.")
