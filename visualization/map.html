@@ -557,28 +557,28 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
         <h2>Connect a model endpoint</h2>
         <p class="lede">Map, Table and Ground detail work with nothing attached. Analysis needs
         a model; Dynamic Search needs the search index. Both are optional. This hosted copy runs
-        Analysis against <b>a model on your own machine or network only</b> — your model, your
-        hardware, nothing sent to this site and no API key to hand over.</p>
+        Analysis against <b>a model on this machine only</b> — your model, your hardware, nothing
+        sent to this site and no API key to hand over.</p>
 
         <h3>What each tab needs</h3>
         <table>
           <thead><tr><th>Tab</th><th>Needs</th></tr></thead>
           <tbody>
             <tr><td>Map, Table, Ground detail, License</td><td>Nothing. They are already working.</td></tr>
-            <tr><td>Analysis</td><td>A <b>local</b> OpenAI-compatible endpoint — LM Studio, Ollama, llama.cpp, vLLM</td></tr>
+            <tr><td>Analysis</td><td>An OpenAI-compatible server on <b>this machine</b> — LM Studio, Ollama, llama.cpp, vLLM</td></tr>
             <tr><td>Dynamic Search</td><td>The vector index plus <code>scripts/serve.py</code></td></tr>
           </tbody>
         </table>
 
-        <h3>The quick way: point the browser at your local model</h3>
-        <p>The page calls the model directly from your browser, so the model has to be running
-        on your own machine or network. Nothing you type here is sent to this site.</p>
+        <h3>The quick way: point the browser at a model on this machine</h3>
+        <p>The page calls the model directly from your browser, so the model has to be running on
+        the same machine you are reading this on. Nothing you type here is sent to this site.</p>
         <div class="steps">
           <div class="step"><h4>Open the Analysis tab</h4>
             <p>Click <b>Analysis</b>, then expand <b>Model endpoint</b> at the top.</p></div>
           <div class="step"><h4>Fill in three fields</h4>
-            <p><b>Base URL</b> — a local address ending in <code>/v1</code>, for example
-            <code>http://localhost:1234/v1</code>.<br/>
+            <p><b>Base URL</b> — a <code>localhost</code> or <code>127.0.0.1</code> address
+            ending in <code>/v1</code>, for example <code>http://localhost:1234/v1</code>.<br/>
             <b>Model</b> — the name your server reports for the loaded model.<br/>
             <b>API key</b> — leave empty; most local servers do not use one.</p></div>
           <div class="step"><h4>Pick a decision and run it</h4>
@@ -588,18 +588,19 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
             <p>Without the local server there is no decision text on this page, so it will ask
             you to drop the PDF in or paste the text. That is expected.</p></div>
         </div>
-        <div class="note"><b>Local endpoints only, on purpose.</b> This build will not call a
-        hosted provider such as OpenAI or Anthropic, and will tell you so if you try. Sending a
-        provider key from a page you did not build means trusting that page with a credential that
-        can spend your account — the key would sit in this browser's local storage, where any
-        script on this origin could read it. A model on your own machine needs no key, so the
-        problem disappears rather than being managed. To use a hosted provider, take the server
-        route below and keep the key in the server's environment.
-        <br/><br/><b>Two practical notes.</b> Your endpoint must allow browser requests (CORS) —
-        LM Studio and Ollama do by default; llama.cpp and vLLM may need a flag. And if you are
-        reading this over <code>https</code>, browsers only permit plain <code>http</code> to
-        <code>localhost</code> and <code>127.0.0.1</code>; another machine on your network needs
-        <code>https</code> or a tunnel that gives it a localhost address.</div>
+        <div class="note"><b>Loopback only, on purpose.</b> This build will not call a hosted
+        provider such as OpenAI or Anthropic, and will tell you so if you try. Sending a provider
+        key from a page you did not build means trusting that page with a credential that can
+        spend your account — the key would sit in this browser's local storage, where any script
+        on this origin could read it. A model on this machine needs no key, so the problem
+        disappears rather than being managed. It will not reach another machine on your network
+        either: that is a network hop to hardware this page cannot vouch for, and browsers block
+        plain <code>http</code> to it from an <code>https</code> page regardless. To use either,
+        take the server route below.
+        <br/><br/><b>One practical note.</b> Your server must allow browser requests (CORS) — LM
+        Studio and Ollama do by default; llama.cpp and vLLM may need a flag. Plain
+        <code>http</code> to <code>localhost</code> is fine even from an <code>https</code> page,
+        because browsers treat loopback as a trusted origin.</div>
 
         <h3>Endpoints that work</h3>
         <table>
@@ -611,10 +612,9 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
             <tr><td>vLLM</td><td><code>http://localhost:8000/v1</code></td></tr>
           </tbody>
         </table>
-        <p>Anything else speaking <code>/v1/chat/completions</code> works too, as long as it is
-        reachable at a local address: <code>localhost</code>, <code>127.0.0.1</code>, a
-        <code>192.168.·</code>, <code>10.·</code> or <code>172.16–31.·</code> address, a
-        <code>.local</code> name, or a Tailscale address. Hosted providers are reachable only
+        <p>Anything else speaking <code>/v1/chat/completions</code> works too, as long as it
+        answers on <code>localhost</code> or <code>127.0.0.1</code> on this machine. A model on
+        another machine — a LAN box, a Tailscale address, a hosted provider — is reachable only
         through the server route below.</p>
 
         <h3>The other way: run it yourself, and use any endpoint you like</h3>
@@ -2262,12 +2262,16 @@ function renderTray(){
 }
 
 /* ---------- endpoint config ---------- */
-/* The hosted builds only call a model running on your own machine or network.
-   A page served from a public site has no business holding a hosted provider's
-   key: it would sit in localStorage on an origin the visitor cannot audit, and
-   any script on that origin could read it. A local endpoint usually needs no key
-   at all, which removes the problem instead of managing it. Running the project
-   yourself lifts the restriction — scripts/serve.py keeps the key server-side. */
+/* The hosted builds only call a model running on the same machine as the browser
+   — loopback, nothing else. A page served from a public site has no business
+   holding a hosted provider's key: it would sit in localStorage on an origin the
+   visitor cannot audit, and any script on that origin could read it. A loopback
+   endpoint usually needs no key at all, which removes the problem instead of
+   managing it. Loopback rather than "any private address" is deliberate: a LAN
+   or Tailscale address is someone else's machine, reached over a network, and a
+   browser will not send plain http to one from an https page anyway. Running the
+   project yourself lifts the restriction — scripts/serve.py keeps the key
+   server-side and can call anything. */
 const LOCAL_ONLY = WEB_BUILD || SETUP_GUIDE;
 const LOCAL_BASE = "http://localhost:1234/v1";
 function isLocalEndpoint(u){
@@ -2275,16 +2279,9 @@ function isLocalEndpoint(u){
   try{ h = new URL(String(u).trim()).hostname.toLowerCase().replace(/^\[|\]$/g, ""); }
   catch(e){ return false; }
   if(h === "localhost" || h.endsWith(".localhost") || h === "::1") return true;
-  if(h.endsWith(".local")) return true;                       // mDNS / Bonjour
   const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if(!m || m.slice(1).some(x => +x > 255)) return false;
-  const a = +m[1], b = +m[2];
-  return a === 127                                  // loopback
-      || a === 10                                   // private
-      || (a === 192 && b === 168)                   // private
-      || (a === 172 && b >= 16 && b <= 31)          // private
-      || (a === 169 && b === 254)                   // link-local
-      || (a === 100 && b >= 64 && b <= 127);        // CGNAT range (Tailscale)
+  return +m[1] === 127;                             // 127.0.0.0/8, loopback only
 }
 function getCfg(){
   const saved = lsGet(LSK.cfg, {}) || {};
@@ -2306,7 +2303,7 @@ function renderCfg(){
   base.placeholder  = srv.base_url || (LOCAL_ONLY ? LOCAL_BASE : "https://api.openai.com/v1");
   model.placeholder = srv.model || (LOCAL_ONLY ? "the name your server reports" : "gpt-4o-mini");
   key.placeholder = c.serverKey ? "already set on the server — leave blank"
-                  : LOCAL_ONLY ? "usually not needed for a local server" : "sk-…";
+                  : LOCAL_ONLY ? "usually not needed on this machine" : "sk-…";
   const offLimits = LOCAL_ONLY && c.base && !isLocalEndpoint(c.base);
   base.classList.toggle("bad", !!offLimits);
   document.getElementById("cfgsum").textContent =
@@ -2319,17 +2316,16 @@ function renderCfg(){
        Corpus text: <b>${SRV.corpus ? "available" : "not loaded"}</b> · PDF extraction: <b>${SRV.pdf_extract || "not installed (pip install pypdf)"}</b>.`
     : (LOCAL_ONLY
       ? (offLimits
-        ? `<b class="warn">${esc(c.base)} is not a local endpoint.</b> This build only calls a model
-           running on your own machine or network — <code>localhost</code>, <code>127.0.0.1</code>,
-           a <code>192.168.·</code>/<code>10.·</code> address, a <code>.local</code> name, or a
-           Tailscale address. Hosted providers such as OpenAI or Anthropic are deliberately not
-           reachable from here; to use one, run the project yourself so the key lives in the
-           server's environment rather than in a browser.`
-        : `<b>Local endpoints only.</b> This page calls the model straight from your browser, so it
-           only accepts a server on your own machine or network — LM&nbsp;Studio, Ollama,
-           llama.cpp, vLLM. Nothing you type is sent to the site you are reading this on, and a
-           local server usually needs no key at all. There is no decision text here either, so you
-           will be asked for the PDF or to paste the text.`)
+        ? `<b class="warn">${esc(c.base)} is not a loopback address.</b> This build only calls a
+           model running on this same machine — <code>localhost</code> or <code>127.0.0.1</code>.
+           A hosted provider such as OpenAI or Anthropic is deliberately not reachable from here,
+           and neither is another machine on your network. To use either, run the project yourself
+           so the key lives in the server's environment rather than in a browser.`
+        : `<b>This machine only.</b> This page calls the model straight from your browser, and only
+           at <code>localhost</code> or <code>127.0.0.1</code> — LM&nbsp;Studio, Ollama, llama.cpp
+           or vLLM running right here. Nothing you type is sent to the site you are reading this
+           on, and a server on this machine usually needs no key at all. There is no decision text
+           here either, so you will be asked for the PDF or to paste the text.`)
       : `No local server — this page is talking to the endpoint directly, so the endpoint must allow
          browser requests (CORS) and the key is kept in this browser's localStorage only.
          There is no decision text here either, so you will be asked for the PDF or the text.
@@ -2399,11 +2395,12 @@ async function streamDirect(messages, onDelta, maxTokens){
   const c = getCfg();
   if(!c.base) throw new Error("Set a base URL under Model endpoint first.");
   if(LOCAL_ONLY && !isLocalEndpoint(c.base))
-    throw new Error(`${c.base} is not a local endpoint. This build only calls a model running on `
-      + `your own machine or network — LM Studio (http://localhost:1234/v1), Ollama `
+    throw new Error(`${c.base} is not a loopback address. This build only calls a model running `
+      + `on this same machine — LM Studio (http://localhost:1234/v1), Ollama `
       + `(http://localhost:11434/v1), llama.cpp (http://localhost:8080/v1) or vLLM `
-      + `(http://localhost:8000/v1). To use a hosted provider, run the project yourself with `
-      + `scripts/serve.py, which keeps the key in the server's environment instead of a browser.`);
+      + `(http://localhost:8000/v1). To use a hosted provider, or a model on another machine, run `
+      + `the project yourself with scripts/serve.py, which keeps the key in the server's `
+      + `environment instead of a browser.`);
   if(!c.model) throw new Error("Set a model name under Model endpoint first.");
   const url = c.base.replace(/\/+$/,"") + "/chat/completions";
   const payload = {model: c.model, messages, stream:true, temperature:0.1, max_tokens: maxTokens || 2600};
@@ -2416,15 +2413,11 @@ async function streamDirect(messages, onDelta, maxTokens){
         body: JSON.stringify(payload)});
     }catch(e){
       if(e.name === "AbortError") throw e;
-      const mixed = location.protocol === "https:" && /^http:/i.test(url)
-                    && !/^http:\/\/(localhost|127\.|\[?::1\]?)(:|\/)/i.test(url);
-      throw new Error(`could not reach ${url} — ${e.message}. `
-        + (mixed
-          ? `This page is served over https, and browsers only allow plain http to localhost `
-            + `or 127.0.0.1. Serve the model over https, or reach it on a localhost address `
-            + `through an SSH or Tailscale tunnel.`
-          : `Check the server is running, and that it allows browser requests from this page `
-            + `(CORS). LM Studio and Ollama do by default; llama.cpp and vLLM may need a flag.`));
+      throw new Error(`could not reach ${url} — ${e.message}. Check the model server is running `
+        + `on this machine, and that it allows browser requests from this page (CORS): LM Studio `
+        + `and Ollama do by default, llama.cpp and vLLM may need a flag. Some browsers also block `
+        + `a public page from reaching a loopback address at all; if yours does, run the project `
+        + `locally and open it from there.`);
     }
     if(res.status === 400){
       const t = await res.text();
