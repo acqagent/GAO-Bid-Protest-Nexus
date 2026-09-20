@@ -365,6 +365,8 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
 .cfgbody input:focus{outline:none;border-color:#4d7dff}
 .cfgnote{grid-column:1/-1;font-size:11.5px;color:var(--mut);line-height:1.55}
 .cfgnote b{color:var(--ink)}
+.cfgnote b.warn{color:#e0a34d}
+.cfgbody input.bad{border-color:#e0a34d;background:#1d1811}
 .acard{border:1px solid var(--line);border-radius:10px;background:#12161d;margin:13px 0;overflow:hidden}
 .acard.set{border-color:rgba(255,182,72,.45)}
 .acard>.ah{display:flex;gap:9px;align-items:center;flex-wrap:wrap;padding:10px 13px;
@@ -554,29 +556,31 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
       <div class="lic">
         <h2>Connect a model endpoint</h2>
         <p class="lede">Map, Table and Ground detail work with nothing attached. Analysis needs
-        a model; Dynamic Search needs the search index. Both are optional, and both are yours to
-        point wherever you like — including at a model running on your own machine.</p>
+        a model; Dynamic Search needs the search index. Both are optional. This hosted copy runs
+        Analysis against <b>a model on your own machine or network only</b> — your model, your
+        hardware, nothing sent to this site and no API key to hand over.</p>
 
         <h3>What each tab needs</h3>
         <table>
           <thead><tr><th>Tab</th><th>Needs</th></tr></thead>
           <tbody>
             <tr><td>Map, Table, Ground detail, License</td><td>Nothing. They are already working.</td></tr>
-            <tr><td>Analysis</td><td>Any OpenAI-compatible endpoint — hosted or local</td></tr>
+            <tr><td>Analysis</td><td>A <b>local</b> OpenAI-compatible endpoint — LM Studio, Ollama, llama.cpp, vLLM</td></tr>
             <tr><td>Dynamic Search</td><td>The vector index plus <code>scripts/serve.py</code></td></tr>
           </tbody>
         </table>
 
-        <h3>The quick way: point the browser at an endpoint</h3>
-        <p>Nothing to install. The page calls the endpoint directly from your browser.</p>
+        <h3>The quick way: point the browser at your local model</h3>
+        <p>The page calls the model directly from your browser, so the model has to be running
+        on your own machine or network. Nothing you type here is sent to this site.</p>
         <div class="steps">
           <div class="step"><h4>Open the Analysis tab</h4>
             <p>Click <b>Analysis</b>, then expand <b>Model endpoint</b> at the top.</p></div>
           <div class="step"><h4>Fill in three fields</h4>
-            <p><b>Base URL</b> — ends in <code>/v1</code>, for example
-            <code>https://api.openai.com/v1</code> or <code>http://localhost:1234/v1</code>.<br/>
-            <b>Model</b> — the name your endpoint answers to.<br/>
-            <b>API key</b> — leave empty for most local servers.</p></div>
+            <p><b>Base URL</b> — a local address ending in <code>/v1</code>, for example
+            <code>http://localhost:1234/v1</code>.<br/>
+            <b>Model</b> — the name your server reports for the loaded model.<br/>
+            <b>API key</b> — leave empty; most local servers do not use one.</p></div>
           <div class="step"><h4>Pick a decision and run it</h4>
             <p>Use <b>Select</b> on any decision in the Table or a Map popup, then
             <b>✦ Run analysis</b>. Choose <b>Compare as a set</b> for two or more.</p></div>
@@ -584,10 +588,18 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
             <p>Without the local server there is no decision text on this page, so it will ask
             you to drop the PDF in or paste the text. That is expected.</p></div>
         </div>
-        <div class="note"><b>Two things to know.</b> Your key is kept in this browser's local
-        storage and is never sent anywhere but the endpoint you name. And the endpoint has to
-        allow browser requests (CORS) — most hosted providers and local servers do; if one does
-        not, use the server route below.</div>
+        <div class="note"><b>Local endpoints only, on purpose.</b> This build will not call a
+        hosted provider such as OpenAI or Anthropic, and will tell you so if you try. Sending a
+        provider key from a page you did not build means trusting that page with a credential that
+        can spend your account — the key would sit in this browser's local storage, where any
+        script on this origin could read it. A model on your own machine needs no key, so the
+        problem disappears rather than being managed. To use a hosted provider, take the server
+        route below and keep the key in the server's environment.
+        <br/><br/><b>Two practical notes.</b> Your endpoint must allow browser requests (CORS) —
+        LM Studio and Ollama do by default; llama.cpp and vLLM may need a flag. And if you are
+        reading this over <code>https</code>, browsers only permit plain <code>http</code> to
+        <code>localhost</code> and <code>127.0.0.1</code>; another machine on your network needs
+        <code>https</code> or a tunnel that gives it a localhost address.</div>
 
         <h3>Endpoints that work</h3>
         <table>
@@ -599,14 +611,18 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
             <tr><td>vLLM</td><td><code>http://localhost:8000/v1</code></td></tr>
           </tbody>
         </table>
-        <p>Hosted providers work the same way — OpenAI, OpenRouter, Together, Groq, Fireworks,
-        LiteLLM and anything else speaking <code>/v1/chat/completions</code>. Only the base URL,
-        the model name and the key change.</p>
+        <p>Anything else speaking <code>/v1/chat/completions</code> works too, as long as it is
+        reachable at a local address: <code>localhost</code>, <code>127.0.0.1</code>, a
+        <code>192.168.·</code>, <code>10.·</code> or <code>172.16–31.·</code> address, a
+        <code>.local</code> name, or a Tailscale address. Hosted providers are reachable only
+        through the server route below.</p>
 
-        <h3>The tidier way: let the server hold the key</h3>
-        <p>Run the project's own server and your key lives in its environment instead of in a
-        browser. The server also reads the decision text for you, so you are not asked for PDFs,
-        and it is the only way to turn on Dynamic Search.</p>
+        <h3>The other way: run it yourself, and use any endpoint you like</h3>
+        <p>Run the project's own server and the local-only restriction no longer applies — the
+        server calls the endpoint, so any OpenAI-compatible provider works, hosted or local, and
+        your key lives in the server's environment instead of in a browser. The server also reads
+        the decision text for you, so you are not asked for PDFs, and it is the only way to turn
+        on Dynamic Search.</p>
         <pre><code>git clone https://github.com/acqagent/GAO-Bid-Protest-Nexus.git
 cd GAO-Bid-Protest-Nexus
 python -m venv .venv &amp;&amp; .venv/bin/pip install -r requirements.txt
@@ -773,13 +789,15 @@ const STATIC_BUILD = false;
    false: running locally, where scripts/serve.py may well be behind this page.
    true : a hosted copy with no backend. Skips the /api/config probe, so a
           public site does not log a 404 on every pageview, and swaps the
-          "start the server" copy for something a visitor can act on.
+          "start the server" copy for something a visitor can act on. Also
+          restricts Analysis to a local endpoint (see LOCAL_ONLY below).
    scripts/build_static.py --web flips this line. */
 const WEB_BUILD = true;
 
 /* SETUP_GUIDE ---------------------------------------------------------------
    true adds a Setup tab: what each feature needs, and step by step how to point
-   the dashboard at an OpenAI-compatible endpoint so Analysis works.
+   the dashboard at a local OpenAI-compatible endpoint so Analysis works. Like
+   WEB_BUILD it restricts Analysis to a local endpoint (see LOCAL_ONLY below).
    scripts/build_static.py --connect flips this line. */
 const SETUP_GUIDE = true;
 
@@ -2244,12 +2262,36 @@ function renderTray(){
 }
 
 /* ---------- endpoint config ---------- */
+/* The hosted builds only call a model running on your own machine or network.
+   A page served from a public site has no business holding a hosted provider's
+   key: it would sit in localStorage on an origin the visitor cannot audit, and
+   any script on that origin could read it. A local endpoint usually needs no key
+   at all, which removes the problem instead of managing it. Running the project
+   yourself lifts the restriction — scripts/serve.py keeps the key server-side. */
+const LOCAL_ONLY = WEB_BUILD || SETUP_GUIDE;
+const LOCAL_BASE = "http://localhost:1234/v1";
+function isLocalEndpoint(u){
+  let h;
+  try{ h = new URL(String(u).trim()).hostname.toLowerCase().replace(/^\[|\]$/g, ""); }
+  catch(e){ return false; }
+  if(h === "localhost" || h.endsWith(".localhost") || h === "::1") return true;
+  if(h.endsWith(".local")) return true;                       // mDNS / Bonjour
+  const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if(!m || m.slice(1).some(x => +x > 255)) return false;
+  const a = +m[1], b = +m[2];
+  return a === 127                                  // loopback
+      || a === 10                                   // private
+      || (a === 192 && b === 168)                   // private
+      || (a === 172 && b >= 16 && b <= 31)          // private
+      || (a === 169 && b === 254)                   // link-local
+      || (a === 100 && b >= 64 && b <= 127);        // CGNAT range (Tailscale)
+}
 function getCfg(){
   const saved = lsGet(LSK.cfg, {}) || {};
   const srv = (SRV && SRV.llm) || {};
   return {
-    base: (saved.base || srv.base_url || "https://api.openai.com/v1").trim(),
-    model: (saved.model || srv.model || "gpt-4o-mini").trim(),
+    base: (saved.base || srv.base_url || (LOCAL_ONLY ? LOCAL_BASE : "https://api.openai.com/v1")).trim(),
+    model: (saved.model || srv.model || (LOCAL_ONLY ? "" : "gpt-4o-mini")).trim(),
     key: (saved.key || "").trim(),
     serverKey: !!srv.has_key
   };
@@ -2261,9 +2303,12 @@ function renderCfg(){
   if(document.activeElement !== base)  base.value  = c.base;
   if(document.activeElement !== model) model.value = c.model;
   const srv = (SRV && SRV.llm) || {};
-  base.placeholder  = srv.base_url || "https://api.openai.com/v1";
-  model.placeholder = srv.model || "gpt-4o-mini";
-  key.placeholder = c.serverKey ? "already set on the server — leave blank" : "sk-…";
+  base.placeholder  = srv.base_url || (LOCAL_ONLY ? LOCAL_BASE : "https://api.openai.com/v1");
+  model.placeholder = srv.model || (LOCAL_ONLY ? "the name your server reports" : "gpt-4o-mini");
+  key.placeholder = c.serverKey ? "already set on the server — leave blank"
+                  : LOCAL_ONLY ? "usually not needed for a local server" : "sk-…";
+  const offLimits = LOCAL_ONLY && c.base && !isLocalEndpoint(c.base);
+  base.classList.toggle("bad", !!offLimits);
   document.getElementById("cfgsum").textContent =
     `· ${c.model} at ${c.base.replace(/^https?:\/\//,"")}` +
     (c.serverKey && !c.key ? " · key on the server" : c.key ? " · key in this browser" : " · no key set");
@@ -2272,11 +2317,19 @@ function renderCfg(){
        ${c.serverKey ? `<b>A key is already set in the server's environment</b> — leave the key box empty and it never touches the browser.`
                      : `No key in the server's environment. Either restart it with <code>OPENAI_API_KEY=… .venv/bin/python scripts/serve.py</code>, or type one here — typed keys are kept in this browser's localStorage only.`}
        Corpus text: <b>${SRV.corpus ? "available" : "not loaded"}</b> · PDF extraction: <b>${SRV.pdf_extract || "not installed (pip install pypdf)"}</b>.`
-    : (WEB_BUILD
-      ? `This page calls the endpoint from your browser, so it has to allow browser requests
-         (CORS), and your key is kept in <b>this browser only</b> — it is never sent to the
-         site you are reading this on. There is no decision text here either, so you will be
-         asked for the PDF or to paste the text.`
+    : (LOCAL_ONLY
+      ? (offLimits
+        ? `<b class="warn">${esc(c.base)} is not a local endpoint.</b> This build only calls a model
+           running on your own machine or network — <code>localhost</code>, <code>127.0.0.1</code>,
+           a <code>192.168.·</code>/<code>10.·</code> address, a <code>.local</code> name, or a
+           Tailscale address. Hosted providers such as OpenAI or Anthropic are deliberately not
+           reachable from here; to use one, run the project yourself so the key lives in the
+           server's environment rather than in a browser.`
+        : `<b>Local endpoints only.</b> This page calls the model straight from your browser, so it
+           only accepts a server on your own machine or network — LM&nbsp;Studio, Ollama,
+           llama.cpp, vLLM. Nothing you type is sent to the site you are reading this on, and a
+           local server usually needs no key at all. There is no decision text here either, so you
+           will be asked for the PDF or to paste the text.`)
       : `No local server — this page is talking to the endpoint directly, so the endpoint must allow
          browser requests (CORS) and the key is kept in this browser's localStorage only.
          There is no decision text here either, so you will be asked for the PDF or the text.
@@ -2345,6 +2398,13 @@ async function streamViaServer(path, body, onDelta, onSource){
 async function streamDirect(messages, onDelta, maxTokens){
   const c = getCfg();
   if(!c.base) throw new Error("Set a base URL under Model endpoint first.");
+  if(LOCAL_ONLY && !isLocalEndpoint(c.base))
+    throw new Error(`${c.base} is not a local endpoint. This build only calls a model running on `
+      + `your own machine or network — LM Studio (http://localhost:1234/v1), Ollama `
+      + `(http://localhost:11434/v1), llama.cpp (http://localhost:8080/v1) or vLLM `
+      + `(http://localhost:8000/v1). To use a hosted provider, run the project yourself with `
+      + `scripts/serve.py, which keeps the key in the server's environment instead of a browser.`);
+  if(!c.model) throw new Error("Set a model name under Model endpoint first.");
   const url = c.base.replace(/\/+$/,"") + "/chat/completions";
   const payload = {model: c.model, messages, stream:true, temperature:0.1, max_tokens: maxTokens || 2600};
   for(let attempt = 0; attempt < 4; attempt++){
@@ -2356,8 +2416,15 @@ async function streamDirect(messages, onDelta, maxTokens){
         body: JSON.stringify(payload)});
     }catch(e){
       if(e.name === "AbortError") throw e;
-      throw new Error(`could not reach ${url} — ${e.message}. A browser can only call an `
-        + `endpoint that sends CORS headers; run scripts/serve.py and the server calls it instead.`);
+      const mixed = location.protocol === "https:" && /^http:/i.test(url)
+                    && !/^http:\/\/(localhost|127\.|\[?::1\]?)(:|\/)/i.test(url);
+      throw new Error(`could not reach ${url} — ${e.message}. `
+        + (mixed
+          ? `This page is served over https, and browsers only allow plain http to localhost `
+            + `or 127.0.0.1. Serve the model over https, or reach it on a localhost address `
+            + `through an SSH or Tailscale tunnel.`
+          : `Check the server is running, and that it allows browser requests from this page `
+            + `(CORS). LM Studio and Ollama do by default; llama.cpp and vLLM may need a flag.`));
     }
     if(res.status === 400){
       const t = await res.text();
@@ -2783,8 +2850,13 @@ document.getElementById("traycompare").onclick = ()=>{
   document.getElementById("anquestion").classList.remove("hidden");
   setTab("an"); runAnalysis();
 };
-["cfgbase","cfgmodel","cfgkey"].forEach(id =>
-  document.getElementById(id).addEventListener("change", saveCfg));
+["cfgbase","cfgmodel","cfgkey"].forEach(id => {
+  const el = document.getElementById(id);
+  // "input" as well as "change" so the local-only warning appears as you type,
+  // rather than waiting for the field to lose focus
+  el.addEventListener("change", saveCfg);
+  el.addEventListener("input", saveCfg);
+});
 document.getElementById("anquestion").classList.add("hidden");
 
 /* Ask the server what it can do. Absent (the basic build), everything falls

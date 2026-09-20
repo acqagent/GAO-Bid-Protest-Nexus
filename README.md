@@ -44,6 +44,8 @@ and every decision links back to gao.gov, which is the authority. See
   the Table's first column, a Map popup, a Dynamic Search result — or hit the
   **✦ Analyze** button on any single decision. Output lands on this tab, never
   in the view you picked from. See [Decision analysis](#decision-analysis).
+  The hosted builds restrict this to a model on your own machine or network —
+  see [Hosting it](#hosting-it).
 - **Ground detail** — how often one ground is sustained, against the 6.0%
   corpus base rate, with the 95% confidence interval its sample size supports,
   a disposition breakdown, splits by authority and posture, and links to every
@@ -205,6 +207,24 @@ server running, set `OPENAI_API_KEY` in its environment instead and the key
 never reaches the browser; typed keys are kept in that browser's `localStorage`
 only. Without the server the page calls the endpoint directly, so the endpoint
 must send CORS headers.
+
+**The hosted builds are local-endpoint only.** `--web` and `--connect` accept a
+base URL on `localhost`, `127.0.0.1`, a private LAN range (`10.·`, `192.168.·`,
+`172.16–31.·`), a `.local` name, or the Tailscale CGNAT range — and refuse
+anything else before a request leaves the browser. A page served from a public
+site should not be asking a visitor for a hosted provider's key: the key would
+sit in `localStorage` on an origin the visitor cannot audit, readable by any
+script that origin ever loads. A model on the visitor's own machine needs no key
+at all, which removes the problem rather than managing it. Hosted providers stay
+available the moment the key can live somewhere better — run `scripts/serve.py`
+and it holds the key in its environment. The restriction is `LOCAL_ONLY` in
+`visualization/map.html` (`WEB_BUILD || SETUP_GUIDE`); the local and static
+builds are unaffected.
+
+One browser rule interacts with this: a page served over `https` may only call
+plain `http` on `localhost` and `127.0.0.1`. Another machine on the LAN needs
+`https` or a tunnel that presents it at a localhost address. The page says so
+when a request fails that way.
 
 **Using a reasoning model.** o-series, DeepSeek-R1, Qwen3 and friends bill their
 thinking against the same completion budget as the answer, and a GAO decision is
@@ -458,8 +478,8 @@ Three builds come out of the same source file, each one switch away:
 |---|---|---|---|
 | Local (default) | `visualization/map.html` | all six | nothing for Map/Table/Ground/License; `scripts/serve.py` for Dynamic Search; a model endpoint for Analysis |
 | Static | `python3 scripts/build_static.py` | four | a file server, nothing else — Dynamic Search and Analysis are removed outright |
-| Web | `python3 scripts/build_static.py --web` | all six | a file server; the two backend tabs explain themselves to a visitor instead of naming a server they cannot start |
-| Connect | `python3 scripts/build_static.py --connect` | all six + Setup | same as Web, plus a Setup tab walking a visitor through pointing it at their own OpenAI-compatible endpoint |
+| Web | `python3 scripts/build_static.py --web` | all six | a file server; the two backend tabs explain themselves to a visitor instead of naming a server they cannot start. Analysis accepts **local endpoints only** |
+| Connect | `python3 scripts/build_static.py --connect` | all six + Setup | same as Web, plus a Setup tab walking a visitor through pointing it at a **local** OpenAI-compatible endpoint |
 
 Upload the output as `index.html`. It is ~10.9 MB raw and ~1.8 MB gzipped —
 mostly embedded JSON, so turn gzip or brotli on at the server and it compresses
