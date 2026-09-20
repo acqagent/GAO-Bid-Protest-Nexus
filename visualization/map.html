@@ -239,6 +239,9 @@ h1 small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-to
   font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
 .lic .steps{counter-reset:step}
 .lic .step h4{margin:0 0 5px;font-size:14px;color:var(--ink)}
+.lic .heads{margin:18px 0;padding:9px 13px;border-left:2px solid #4d7dff;background:#121722;
+  border-radius:0 7px 7px 0;font-size:13px;color:#dbe3ee}
+.lic .hint{margin:6px 0 0;font-size:12.5px;color:var(--mut)}
 .lic code,.lic kbd{background:#0b0e13;border:1px solid var(--line);border-radius:4px;
   padding:1px 5px;font-size:12px;font-family:ui-monospace,monospace;color:#cdd6e3}
 .lic pre{background:#0b0e13;border:1px solid var(--line);border-radius:9px;padding:12px 14px;
@@ -367,6 +370,17 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
 .cfgnote b{color:var(--ink)}
 .cfgnote b.warn{color:#e0a34d}
 .cfgbody input.bad{border-color:#e0a34d;background:#1d1811}
+.cfgtest{grid-column:1/-1;display:flex;align-items:flex-start;gap:11px;flex-wrap:wrap}
+.cfgtest button{background:#1b2532;border:1px solid var(--line);color:var(--ink);border-radius:7px;
+  padding:7px 14px;font-size:12px;cursor:pointer;white-space:nowrap;flex:none}
+.cfgtest button:hover:not(:disabled){background:#233042;border-color:#4d7dff}
+.cfgtest button:disabled{opacity:.5;cursor:default}
+.cfgtest .res{font-size:11.5px;line-height:1.55;color:var(--mut);flex:1 1 260px;padding-top:3px}
+.cfgtest .res b{color:var(--ink)}
+.cfgtest .res.ok b{color:#5fbf7f}
+.cfgtest .res.err b{color:#e0a34d}
+.cfgtest .res a{color:#7aa2ff}
+.okmark{color:#5fbf7f;font-weight:700;margin-right:2px}
 .acard{border:1px solid var(--line);border-radius:10px;background:#12161d;margin:13px 0;overflow:hidden}
 .acard.set{border-color:rgba(255,182,72,.45)}
 .acard>.ah{display:flex;gap:9px;align-items:center;flex-wrap:wrap;padding:10px 13px;
@@ -518,7 +532,7 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
         Output lands here, never in the view you picked from.</p>
 
         <details class="cfg" id="ancfg">
-          <summary>Model endpoint <span id="cfgsum" class="mut"></span></summary>
+          <summary>Model endpoint <span id="cfgok" class="okmark"></span><span id="cfgsum" class="mut"></span></summary>
           <div class="cfgbody">
             <label>Base URL
               <input id="cfgbase" placeholder="https://api.openai.com/v1" autocomplete="off" spellcheck="false"/></label>
@@ -526,6 +540,11 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
               <input id="cfgmodel" placeholder="gpt-4o-mini" autocomplete="off" spellcheck="false"/></label>
             <label>API key
               <input id="cfgkey" type="password" placeholder="sk-…" autocomplete="off" spellcheck="false"/></label>
+            <div class="cfgtest">
+              <button id="cfgtest" type="button"
+                title="Send a one-token request to the endpoint above and report what comes back">Test connection</button>
+              <span class="res" id="cfgtestres"></span>
+            </div>
             <div class="cfgnote" id="cfgnote"></div>
           </div>
         </details>
@@ -576,17 +595,24 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
         <div class="steps">
           <div class="step"><h4>Open the Analysis tab</h4>
             <p>Click <b>Analysis</b>, then expand <b>Model endpoint</b> at the top.</p></div>
-          <div class="step"><h4>Fill in three fields</h4>
+          <div class="step"><h4>Fill in three fields, then test</h4>
             <p><b>Base URL</b> — a <code>localhost</code> or <code>127.0.0.1</code> address
             ending in <code>/v1</code>, for example <code>http://localhost:1234/v1</code>.<br/>
-            <b>Model</b> — the name your server reports for the loaded model.<br/>
-            <b>API key</b> — leave empty; most local servers do not use one.</p></div>
+            <b>Model</b> — the model id your server reports, for example
+            <code>qwen2.5-7b-instruct</code>; LM Studio shows it beside the loaded model, and
+            <code>ollama list</code> prints it.<br/>
+            <b>API key</b> — leave blank. Local servers rarely use one: LM Studio and Ollama
+            ignore it, and vLLM only wants one if you started it with <code>--api-key</code>.</p>
+            <p class="hint">Then press <b>Test connection</b>. It sends a one-token request and
+            says whether the endpoint answered, so a wrong port or a stopped server shows up
+            here rather than halfway through an analysis. A ✓ appears beside
+            <b>Model endpoint</b> once a call has gone through.</p></div>
+          <p class="heads">Have the decision PDF or its text ready. The page will ask you to
+          drop it in or paste it — this copy carries no decision text of its own.</p>
           <div class="step"><h4>Pick a decision and run it</h4>
             <p>Use <b>Select</b> on any decision in the Table or a Map popup, then
-            <b>✦ Run analysis</b>. Choose <b>Compare as a set</b> for two or more.</p></div>
-          <div class="step"><h4>Give it the decision text</h4>
-            <p>Without the local server there is no decision text on this page, so it will ask
-            you to drop the PDF in or paste the text. That is expected.</p></div>
+            <b>✦ Run analysis</b>. Choose <b>Compare as a set</b> for two or more. It asks for
+            the decision text first, then streams the analysis into the Analysis tab.</p></div>
         </div>
         <div class="note"><b>Loopback only, on purpose.</b> This build will not call a hosted
         provider such as OpenAI or Anthropic, and will tell you so if you try. Sending a provider
@@ -597,10 +623,14 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
         either: that is a network hop to hardware this page cannot vouch for, and browsers block
         plain <code>http</code> to it from an <code>https</code> page regardless. To use either,
         take the server route below.
-        <br/><br/><b>One practical note.</b> Your server must allow browser requests (CORS) — LM
-        Studio and Ollama do by default; llama.cpp and vLLM may need a flag. Plain
-        <code>http</code> to <code>localhost</code> is fine even from an <code>https</code> page,
-        because browsers treat loopback as a trusted origin.</div>
+        <br/><br/><b>Reaching a local server from a hosted page is the fiddly part.</b> CORS is
+        only the first hurdle — llama.cpp and vLLM may need a flag to send the headers at all,
+        while LM Studio and Ollama do by default. Even with CORS correct, Chrome requires a
+        private-network preflight before a public page may touch a local address, and Safari
+        may refuse the request outright. If <b>Test connection</b> reports it could not reach
+        your server, that is usually why, and the fix is a browser flag, a tunnel, or
+        <a href="#srvroute" data-goserver="1">the server route below</a> — which sidesteps all
+        of it by having the server make the call.</div>
 
         <h3>Endpoints that work</h3>
         <table>
@@ -617,7 +647,7 @@ details.cfg[open]>summary{border-bottom:1px solid var(--line);color:var(--ink)}
         another machine — a LAN box, a Tailscale address, a hosted provider — is reachable only
         through the server route below.</p>
 
-        <h3>The other way: run it yourself, and use any endpoint you like</h3>
+        <h3 id="srvroute">The other way: run it yourself, and use any endpoint you like</h3>
         <p>Run the project's own server and the local-only restriction no longer applies — the
         server calls the endpoint, so any OpenAI-compatible provider works, hosted or local, and
         your key lives in the server's environment instead of in a browser. The server also reads
@@ -2290,9 +2320,13 @@ function getCfg(){
     base: (saved.base || srv.base_url || (LOCAL_ONLY ? LOCAL_BASE : "https://api.openai.com/v1")).trim(),
     model: (saved.model || srv.model || (LOCAL_ONLY ? "" : "gpt-4o-mini")).trim(),
     key: (saved.key || "").trim(),
+    vsig: (saved.vsig || "").trim(),
     serverKey: !!srv.has_key
   };
 }
+/* Which base+model the green check belongs to. saveCfg drops vsig on any edit,
+   so the check clears the moment the settings it vouched for change. */
+const cfgSig = c => `${c.base}|${c.model}`;
 function renderCfg(){
   const c = getCfg();
   const base = document.getElementById("cfgbase"), model = document.getElementById("cfgmodel"),
@@ -2306,6 +2340,8 @@ function renderCfg(){
                   : LOCAL_ONLY ? "usually not needed on this machine" : "sk-…";
   const offLimits = LOCAL_ONLY && c.base && !isLocalEndpoint(c.base);
   base.classList.toggle("bad", !!offLimits);
+  const okMark = document.getElementById("cfgok");
+  if(okMark) okMark.textContent = (c.vsig && c.vsig === cfgSig(c)) ? "✓" : "";
   document.getElementById("cfgsum").textContent =
     `· ${c.model} at ${c.base.replace(/^https?:\/\//,"")}` +
     (c.serverKey && !c.key ? " · key on the server" : c.key ? " · key in this browser" : " · no key set");
@@ -2332,9 +2368,60 @@ function renderCfg(){
          Running <code>scripts/serve.py</code> removes all three of those limits.`);
 }
 function saveCfg(){
+  // vsig is deliberately not carried over: editing any field invalidates the
+  // check, so it only ever vouches for settings that actually answered.
   lsSet(LSK.cfg, {base: document.getElementById("cfgbase").value.trim(),
                   model: document.getElementById("cfgmodel").value.trim(),
                   key: document.getElementById("cfgkey").value.trim()});
+  renderCfg();
+}
+
+/* ---------- test connection ----------
+   One minimal completions call, so a misconfigured endpoint fails here with a
+   readable reason rather than halfway through an analysis. */
+const SRVLINK = ` <a href="#srvroute" data-goserver="1">Use the server route instead</a>.`;
+async function testConn(){
+  const btn = document.getElementById("cfgtest"), out = document.getElementById("cfgtestres");
+  const c = getCfg();
+  const show = (cls, html) => { out.className = "res " + cls; out.innerHTML = html; };
+  const route = SETUP_GUIDE ? SRVLINK : "";
+  if(!c.base) return show("err", `<b>No base URL.</b> Fill that in first.`);
+  if(LOCAL_ONLY && !isLocalEndpoint(c.base))
+    return show("err", `<b>Not a loopback address.</b> This build only calls a model on this `
+      + `machine — <code>localhost</code> or <code>127.0.0.1</code>.${route}`);
+  if(!c.model) return show("err", `<b>No model name.</b> Fill in the id your server reports.`);
+
+  btn.disabled = true; show("", "Testing…");
+  let res;
+  try{
+    res = await fetch(c.base.replace(/\/+$/,"") + "/chat/completions", {
+      method:"POST",
+      headers: Object.assign({"Content-Type":"application/json"},
+                             c.key ? {Authorization:"Bearer " + c.key} : {}),
+      body: JSON.stringify({model:c.model, messages:[{role:"user", content:"ping"}],
+                            max_tokens:1, stream:false})
+    });
+  }catch(e){
+    btn.disabled = false;
+    return show("err", `<b>Could not reach it.</b> The request never completed. The server may `
+      + `not be running, or the browser blocked it before it left: Chrome requires a `
+      + `private-network preflight for a local address, and Safari can refuse it outright, `
+      + `both even when CORS is configured correctly.${route}`);
+  }
+  btn.disabled = false;
+  if(res.status === 401 || res.status === 403)
+    return show("err", `<b>Rejected the credentials (${res.status}).</b> ` + (c.key
+      ? `The endpoint did not accept the key you entered.`
+      : `The endpoint wants an API key and none was given.`));
+  if(!res.ok){
+    let t = ""; try{ t = await res.text(); }catch(e){}
+    return show("err", `<b>Reached it, but it answered ${res.status}.</b> `
+      + `${esc(String(shortErr(res.status, t)).slice(0, 150))}`);
+  }
+  let name = c.model;
+  try{ const j = await res.json(); if(j && j.model) name = j.model; }catch(e){}
+  lsSet(LSK.cfg, {base:c.base, model:c.model, key:c.key, vsig: cfgSig(c)});
+  show("ok", `<b>✓ Connected.</b> Answered as <b>${esc(name)}</b>.`);
   renderCfg();
 }
 
@@ -2850,6 +2937,19 @@ document.getElementById("traycompare").onclick = ()=>{
   el.addEventListener("change", saveCfg);
   el.addEventListener("input", saveCfg);
 });
+document.getElementById("cfgtest").addEventListener("click", testConn);
+// #setupview scrolls independently, so a bare fragment link will not move it
+function goServerRoute(e){
+  const a = e.target.closest && e.target.closest("a[data-goserver]");
+  if(!a) return;
+  e.preventDefault();
+  if(SETUP_GUIDE) setTab("setup");
+  const el = document.getElementById("srvroute");
+  if(el) requestAnimationFrame(()=> el.scrollIntoView({behavior:"smooth", block:"start"}));
+}
+document.getElementById("cfgtestres").addEventListener("click", goServerRoute);
+{ const sv = document.getElementById("setupview");
+  if(sv) sv.addEventListener("click", goServerRoute); }
 document.getElementById("anquestion").classList.add("hidden");
 
 /* Ask the server what it can do. Absent (the basic build), everything falls
